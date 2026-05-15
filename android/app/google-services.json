@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "449590065627",
+    "project_id": "flutterfinal-ridevoyage",
+    "storage_bucket": "flutterfinal-ridevoyage.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:449590065627:android:8c3f0c37d5b0cb298c8ffe",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "449590065627-e3t7mbau3d7tm2agnm5tuhdo9jmgnbls.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBop5_wWuOGSOLRHdWm5ccrzf5uaFJBdTQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "449590065627-e3t7mbau3d7tm2agnm5tuhdo9jmgnbls.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
