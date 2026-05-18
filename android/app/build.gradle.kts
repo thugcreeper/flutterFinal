@@ -1,3 +1,16 @@
+import java.util.Properties
+
+// 1. 讀取 local.properties
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.reader(Charsets.UTF_8).use { reader ->
+        localProperties.load(reader)
+    }
+}
+
+// 2. 取得 MAPS_API_KEY (改用雙引號，且轉型為 String)
+val mapsApiKey = localProperties.getProperty("MAPS_API_KEY") ?: ""
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -31,6 +44,8 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // 加入這行：把 gradle 的變數傳給 manifest 使用
+        manifestPlaceholders["mapsApiKey"] = mapsApiKey
     }
 
     buildTypes {

@@ -2,8 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart' hide EmailAuthProvider;
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart';
 import 'package:flutter/material.dart';
-import '../widgets/safeAssetImage.dart';
-import 'homePage.dart';
+import '../widgets/safe_asset_image.dart';
+import 'home_page.dart';
 
 //驗證閘道，負責判斷使用者是否已登入，並顯示對應的頁面
 class AuthGate extends StatelessWidget {
@@ -23,40 +23,34 @@ class AuthGate extends StatelessWidget {
               GoogleProvider(clientId: clientId),
             ],
             headerBuilder: (context, constraints, shrinkOffset) {
-              return Padding(
-                padding: const EdgeInsets.all(20),
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: SafeAssetImage(
-                    assetPath: 'assets/flutterfire_300x.png',
-                  ),
-                ),
-              );
-            },
-            subtitleBuilder: (context, action) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: action == AuthAction.signIn
-                    ? const Text('Welcome to FlutterFire, please sign in!')
-                    : const Text('Welcome to Flutterfire, please sign up!'),
-              );
-            },
-            footerBuilder: (context, action) {
-              return const Padding(
-                padding: EdgeInsets.only(top: 16),
-                child: Text(
-                  'By signing in, you agree to our terms and conditions.',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              );
-            },
-            sideBuilder: (context, shrinkOffset) {
-              return Padding(
-                padding: const EdgeInsets.all(20),
-                child: AspectRatio(
-                  aspectRatio: 1,
-                  child: SafeAssetImage(
-                    assetPath: 'assets/flutterfire_300x.png',
+              return SingleChildScrollView(
+                // 加上滾動包裹
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    top: 60,
+                    left: 20,
+                    right: 20,
+                    bottom: 20,
+                  ), // 增加 top padding 把內容往下推
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(
+                        height: 100,
+                        width: 100,
+                        child: SafeAssetImage(
+                          assetPath: 'assets/flutterfire_300x.png',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'RideVoyage',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );

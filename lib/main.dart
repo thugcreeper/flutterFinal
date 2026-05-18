@@ -1,9 +1,14 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'pages/userProfilePage.dart';
+import 'pages/user_profile_page.dart';
+import 'pages/settingPage.dart';
 import 'pages/auth_gate.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_maps_flutter_android/google_maps_flutter_android.dart';
+import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
+import 'map_Initializer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +20,12 @@ void main() async {
   }
   // 初始化Firebase，將驗證等流程交給firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  //初始化google map
+  final GoogleMapsFlutterPlatform mapsImplementation =
+      GoogleMapsFlutterPlatform.instance;
+  if (mapsImplementation is GoogleMapsFlutterAndroid) {
+    await initializeMapRenderer();
+  }
   runApp(const MyApp());
 }
 
@@ -35,11 +46,15 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        fontFamily: 'english',
       ),
       //home要設定為AuthGate，讓它負責判斷要顯示登入頁還是首頁
       home: AuthGate(clientId: clientId),
       //main統一管理路由
-      routes: {'/profile': (context) => const UserProfilePage()},
+      routes: {
+        '/profile': (context) => const UserProfilePage(),
+        '/settings': (context) => const SettingsPage(),
+      },
     );
   }
 }
