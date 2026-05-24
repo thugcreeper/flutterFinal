@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/social_login_section.dart';
@@ -62,6 +63,57 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _handleGoogleLogin() async {
+    setState(() => _isLoading = true);
+
+    try {
+      // 先叫出 Google 帳號選擇器，再把結果換成 Firebase 可用的憑證。
+      final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      // 使用從 Google 取得的 access token 和 id token 來建立 Firebase 的 OAuth 憑證。
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      await FirebaseAuth.instance.signInWithCredential(credential);
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Google 登入成功')));
+      }
+    } on FirebaseAuthException catch (e) {
+      final message = switch (e.code) {
+        'account-exists-with-different-credential' => '此帳號已用其他方式註冊',
+        'invalid-credential' => 'Google 驗證失敗',
+        'operation-not-allowed' => 'Google 登入尚未啟用',
+        'user-disabled' => '此帳號已被停用',
+        _ => 'Google 登入失敗：${e.message}',
+      };
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Google 登入失敗：$e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -79,13 +131,12 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 48),
 
                 CustomTextField(
-                  label: 'EMAIL',
+                  label: '帳號',
                   prefixIcon: Icons.mail_outline_rounded,
                   controller: _emailController,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return '請輸入電子郵件';
-                    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-                    if (!emailRegex.hasMatch(value)) return '請輸入有效的電子郵件格式';
+                    if (value == null || value.isEmpty) return '請輸入帳號';
+
                     return null;
                   },
                 ),
@@ -140,7 +191,11 @@ class _LoginPageState extends State<LoginPage> {
                 const _OrDivider(),
                 const SizedBox(height: 24),
 
-                const SocialLoginSection(),
+                Center(
+                  child: SocialLoginSection(
+                    onGooglePressed: _handleGoogleLogin,
+                  ),
+                ),
 
                 const SizedBox(height: 32),
 

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'pages/user_profile_page.dart';
-import 'pages/settingPage.dart';
+import 'pages/setting_page.dart';
 import 'pages/auth_gate.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_maps_flutter_android/google_maps_flutter_android.dart';
@@ -34,14 +34,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String? clientId = dotenv.env['GOOGLE_CLIENT_ID'];
-    if (clientId == null) {
-      return const MaterialApp(
-        home: Scaffold(
-          body: Center(child: Text('Google Client ID 未設定，請檢查 .env 檔案')),
-        ),
-      );
-    }
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
@@ -49,7 +41,7 @@ class MyApp extends StatelessWidget {
         fontFamily: 'english',
       ),
       //home要設定為AuthGate，讓它負責判斷要顯示登入頁還是首頁
-      home: AuthGate(clientId: clientId),
+      home: const AuthGate(),
       //main統一管理路由
       routes: {
         '/profile': (context) => const UserProfilePage(),
