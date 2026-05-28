@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../api/user_profile_api.dart';
 
 class AccountManagementPage extends StatefulWidget {
   const AccountManagementPage({super.key});
@@ -12,6 +14,7 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _storage = const FlutterSecureStorage();
   bool _isLoading = false;
 
   @override
@@ -91,14 +94,27 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseAuth.instance.currentUser!.delete();
-      // AuthGate 會自動偵測並切回登入頁
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await user.delete();
+      } else {
+        await UserProfileApiService().deleteAccount();
+        await _storage.delete(key: 'backendUserId');
+      }
+
+      if (mounted) {
+        Navigator.pop(context);
+      }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         final message = e.code == 'requires-recent-login'
             ? '請重新登入後再試'
             : '刪除失敗：${e.message}';
         _showSnackBar(message);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('刪除失敗：$e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

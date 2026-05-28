@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/social_login_section.dart';
+import 'register_page.dart';
+import 'home_page.dart';
+import '../api/auth_api.dart';
 
 //登入頁面，目前提供可用的google功能，fb line 自訂登入開發中，之後有時間可以提供免登入體驗模式
 class LoginPage extends StatefulWidget {
@@ -15,51 +20,97 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _accountController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _storage = const FlutterSecureStorage();
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _accountController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
+  Future<void> _syncFirebaseUserProfile(User user) async {
+    final docRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final payload = {
+      'uid': user.uid,
+      'account': user.email ?? '',
+      'name': user.displayName ?? '',
+      'email': user.email ?? '',
+      'imageUrl': user.photoURL ?? '',
+      'provider': user.providerData.isNotEmpty
+          ? user.providerData.first.providerId
+          : 'google.com',
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+    await docRef.set({
+      ...payload,
+      'createdAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> _syncBackendUserProfile(Map<String, dynamic> user) async {
+    final userId = (user['id'] ?? '').toString();
+    if (userId.isEmpty) return;
+
+    final docRef = FirebaseFirestore.instance.collection('users').doc(userId);
+    await docRef.set({
+      'uid': userId,
+      'account': (user['account'] ?? '').toString(),
+      'name': (user['name'] ?? '').toString(),
+      'email': '',
+      'imageUrl': (user['imageUrl'] ?? '').toString(),
+      'provider': (user['provider'] ?? 'local').toString(),
+      'updatedAt': FieldValue.serverTimestamp(),
+      'createdAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    await _storage.write(key: 'backendUserId', value: userId);
+  }
+
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+      final api = ApiService();
+      final result = await api.login(
+        _accountController.text.trim(),
+        _passwordController.text.trim(),
       );
+      final user = Map<String, dynamic>.from(result['user'] as Map);
+      await _syncBackendUserProfile(user);
+      await FirebaseAuth.instance.signOut();
 
       if (mounted) {
-        ScaffoldMessenger.of(
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('登入成功', style: TextStyle(fontSize: 16)),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        Navigator.pushReplacement(
           context,
-        ).showSnackBar(const SnackBar(content: Text('登入成功')));
-        // TODO: 導向主頁面
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
       }
-    } on FirebaseAuthException catch (e) {
-      final message = switch (e.code) {
-        'user-not-found' => '找不到此帳號',
-        'wrong-password' => '密碼錯誤',
-        'invalid-email' => '電子郵件格式不正確',
-        'user-disabled' => '此帳號已被停用',
-        'too-many-requests' => '嘗試次數過多，請稍後再試',
-        _ => '登入失敗：${e.message}',
-      };
-
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('登入失敗：$e', style: TextStyle(fontSize: 16)),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -82,12 +133,27 @@ class _LoginPageState extends State<LoginPage> {
         idToken: googleAuth.idToken,
       );
 
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(
+        credential,
+      );
+      final user = userCredential.user;
+      if (user != null) {
+        await _syncFirebaseUserProfile(user);
+        await _storage.delete(key: 'backendUserId');
+      }
 
       if (mounted) {
-        ScaffoldMessenger.of(
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Google 登入成功'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        Navigator.pushReplacement(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Google 登入成功')));
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
       }
     } on FirebaseAuthException catch (e) {
       final message = switch (e.code) {
@@ -133,7 +199,7 @@ class _LoginPageState extends State<LoginPage> {
                 CustomTextField(
                   label: '帳號',
                   prefixIcon: Icons.mail_outline_rounded,
-                  controller: _emailController,
+                  controller: _accountController,
                   validator: (value) {
                     if (value == null || value.isEmpty) return '請輸入帳號';
 
@@ -212,7 +278,12 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       TextButton(
                         onPressed: () {
-                          // TODO: 前往註冊頁面
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const RegisterPage(),
+                            ),
+                          );
                         },
                         style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFF3B82F6),
@@ -248,16 +319,6 @@ class _LoginHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: const Color(0xFF3B82F6),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 28),
-        ),
-        const SizedBox(height: 24),
         const Text(
           '歡迎回來',
           style: TextStyle(

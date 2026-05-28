@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart' hide EmailAuthProvider;
 import 'package:flutter/material.dart';
+import '../api/user_profile_api.dart';
 import 'login_page.dart';
 import 'home_page.dart';
 
@@ -7,16 +8,41 @@ import 'home_page.dart';
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
+  Future<bool> _hasBackendSession() async {
+    try {
+      final api = UserProfileApiService();
+      await api.getMe();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const LoginPage();
+        if (snapshot.hasData) {
+          return const HomePage();
         }
 
-        return const HomePage();
+        return FutureBuilder<bool>(
+          future: _hasBackendSession(),
+          builder: (context, backendSnapshot) {
+            if (backendSnapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            if (backendSnapshot.data == true) {
+              return const HomePage();
+            }
+
+            return const LoginPage();
+          },
+        );
       },
     );
   }

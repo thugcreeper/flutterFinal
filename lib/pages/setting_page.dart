@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'account_management_page.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -52,7 +54,11 @@ class _SettingsPageState extends State<SettingsPage> {
             value: _darkMode,
             onChanged: (value) {
               setState(() => _darkMode = value);
-              // TODO: 實作深色模式切換
+              //有時候只是要操作該實例提供的方法而已，就可以使用Provider.of
+              Provider.of<ThemeProvider>(
+                context,
+                listen: false,
+              ).setThemeMode(value ? ThemeMode.dark : ThemeMode.light);
             },
           ),
 

@@ -37,9 +37,12 @@ dependencies:
   firebase_ui_auth: ^3.0.1
   firebase_ui_oauth_google: 2.0.1
   flutter_dotenv: ^5.1.0 #環境變數套件
-  http: ^1.2.2 #呼叫Directions API
+  http: ^1.6.0 #呼叫Directions API
   shared_preferences: ^2.2.3 #本機儲存路線點位
   sign_in_button: ^5.0.0 #第三方登入按鈕套件
+  cloud_firestore: ^6.4.1 #管理firebase的資料庫
+  provider: ^6.1.5+1
+
 
 dev_dependencies:
   flutter_test:

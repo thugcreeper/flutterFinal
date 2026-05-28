@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -9,6 +8,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_maps_flutter_android/google_maps_flutter_android.dart';
 import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
 import 'map_Initializer.dart';
+import 'package:provider/provider.dart'; //狀態管理套件
+import '../providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,19 +35,35 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        fontFamily: 'english',
+    //MaterialApp外要包一層ChangeNotifierProvider，提供ThemeProvider給整個app使用，
+    //讓它能控制主題切換
+    return ChangeNotifierProvider(
+      //建立這個 Provider 的實例。這行的意思是：在 widget tree 這個位置放一個 ThemeProvider，
+      //所有在它底下的 widget 都能取得它。
+      create: (_) => ThemeProvider(),
+      //Consumer 是我要監聽這個 Provider，它一變我就重建
+      child: Consumer<ThemeProvider>(
+        builder: (_, themeProvider, __) => MaterialApp(
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+            fontFamily: 'english',
+          ),
+          darkTheme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color.fromARGB(255, 63, 59, 71),
+              brightness: Brightness.dark,
+            ),
+            fontFamily: 'english',
+          ),
+          themeMode: themeProvider.themeMode,
+          //home要設定為AuthGate，讓它負責判斷要顯示登入頁還是首頁
+          home: const AuthGate(),
+          routes: {
+            '/profile': (context) => const UserProfilePage(),
+            '/settings': (context) => const SettingsPage(),
+          },
+        ),
       ),
-      //home要設定為AuthGate，讓它負責判斷要顯示登入頁還是首頁
-      home: const AuthGate(),
-      //main統一管理路由
-      routes: {
-        '/profile': (context) => const UserProfilePage(),
-        '/settings': (context) => const SettingsPage(),
-      },
     );
   }
 }
