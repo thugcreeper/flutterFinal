@@ -1,10 +1,10 @@
-import 'package:RideVoyage/pages/home_page.dart' show HomePage;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../api/user_profile_api.dart';
 import 'login_page.dart';
+import 'edit_profile_page.dart';
 
 //使用者資料頁面，用firebase_auth取得使用者資料
 class UserProfilePage extends StatefulWidget {
@@ -46,10 +46,41 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Future<void> _updateProfile() async {
-    // TODO: 實作編輯頁面
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('編輯功能尚未開放')));
+    // 根據目前使用者類型開啟編輯頁
+    try {
+      if (_currentUser != null) {
+        final result = await Navigator.push<bool?>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => EditProfilePage(firebaseUser: _currentUser),
+          ),
+        );
+        if (result == true && mounted) setState(() {});
+        return;
+      }
+
+      final backendUserId = await _storage.read(key: 'backendUserId');
+      if (backendUserId == null || backendUserId.isEmpty) {
+        if (mounted)
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('找不到後端使用者 ID')));
+        return;
+      }
+
+      final result = await Navigator.push<bool?>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EditProfilePage(backendUserId: backendUserId),
+        ),
+      );
+      if (result == true && mounted) setState(() {});
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('開啟編輯失敗：$e')));
+    }
   }
 
   @override
@@ -105,6 +136,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
               final name = (data['name'] ?? '').toString();
               final account = (data['account'] ?? '').toString();
+              final email = (data['email'] ?? '').toString();
+              final description = (data['description'] ?? '').toString();
               final imageUrl = (data['imageUrl'] ?? '').toString();
               final provider = (data['provider'] ?? 'local').toString();
 
@@ -141,6 +174,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       label: '帳號',
                       value: account,
                     ),
+                    const SizedBox(height: 12),
+                    _buildInfoCard(
+                      icon: Icons.email,
+                      label: '電子信箱',
+                      value: email.isEmpty ? '尚未提供電子信箱!' : email,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildInfoCard(
+                      icon: Icons.description,
+                      label: '簡介',
+                      value: description.isEmpty ? '尚未提供簡介!' : description,
+                    ),
+
                     const SizedBox(height: 12),
                     _buildInfoCard(
                       icon: Icons.fingerprint,

@@ -38,3 +38,55 @@ lib/
     ├── safe_asset_image.dart    # 安全載入資源圖片
     └── social_login_section.dart # Google / FB / LINE 區塊
 ```
+
+## 技術棧
+
+### Frontend
+| 技術 | 說明 |
+|------|------|
+| Flutter | 跨平台 UI 框架 |
+| Provider | 全域狀態管理 |
+| Google Maps Flutter | 地圖顯示與互動 |
+
+### 認證
+| 套件 | 說明 |
+|------|------|
+| firebase_auth | Firebase 身份驗證 |
+| firebase_ui_auth | Firebase 登入 UI 元件 |
+| google_sign_in | Google OAuth 登入 |
+| flutter_facebook_auth | Facebook 登入 |
+| flutter_line_sdk | LINE 登入 |
+
+### 資料儲存
+| 服務 | 用途 |
+|------|------|
+| Cloud Firestore | 使用者資料、應用程式資料 |
+| Cloudinary | 使用者頭像、圖片儲存 |
+
+### 外部 API
+| API | 用途 |
+|-----|------|
+| Google Directions API | 路線規劃 |
+| Google Elevation API | 高度資訊 |
+
+### 其他套件
+| 套件 | 版本 | 說明 |
+|------|------|------|
+| image_picker | ^1.2.2 | 相片選取 |
+| shared_preferences | ^2.2.3 | 本地輕量儲存 |
+| flutter_dotenv | ^5.1.0 | 環境變數管理 |
+| http | ^1.6.0 | HTTP 請求 |
+| sign_in_button | ^5.0.0 | 標準社群登入按鈕 |
+
+---
+
+## 環境設定
+
+在專案根目錄建立 `.env`：
+
+```
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
+

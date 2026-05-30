@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../api/user_profile_api.dart';
 
 class AccountManagementPage extends StatefulWidget {
@@ -11,6 +12,7 @@ class AccountManagementPage extends StatefulWidget {
 }
 
 class _AccountManagementPageState extends State<AccountManagementPage> {
+  static const String _savedRoutePointsKey = 'saved_route_points';
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -101,6 +103,9 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
         await UserProfileApiService().deleteAccount();
         await _storage.delete(key: 'backendUserId');
       }
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_savedRoutePointsKey);
 
       if (mounted) {
         Navigator.pop(context);

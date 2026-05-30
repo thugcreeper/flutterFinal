@@ -2,14 +2,104 @@
 
 Prefer existing project patterns.
 
-Before generating new classes:
+---
 
-1. Search for an existing implementation.
-2. Reuse if possible.
-3. Extend before creating new files.
-4. Add commentation in the first line of new file after generating new code
-5. Add commentation for new function, class
-6. Never generate emoji,special text symbol(example:⭡ ♡ √ etc...)
-Avoid duplicate abstractions.
+## 1. Code Reuse Rules
+
+Before creating any new class or file:
+
+1. Search for existing implementations.
+2. Reuse existing code whenever possible.
+3. Extend existing implementations instead of creating duplicates.
+4. Avoid introducing redundant abstractions.
 
 ---
+
+## 2. File Header Comments
+
+All newly created files must include a header comment on the first line.
+
+The header must include:
+
+* File path
+* Purpose of the file
+* Author
+* Date
+
+Example:
+
+```dart
+// File: lib/pages/edit_profile_page.dart
+// Purpose: Edit user profile and upload avatar to Firebase Storage
+// Author: <your name>
+// Date: YYYY-MM-DD
+```
+
+---
+
+## 3. Class and Function Documentation
+
+All public classes and functions must include documentation comments in Traditional Chinese.
+
+### Class Example
+
+```dart
+/// 編輯使用者資料頁面，允許使用者更新名稱與上傳頭像至 Firebase Storage。
+class EditProfilePage { ... }
+```
+
+### Function Example
+
+```dart
+/// 上傳使用者頭像並回傳下載 URL。
+/// 若未選擇圖片則回傳 null。
+///
+/// Parameters:
+/// - id: 使用者 UID
+///
+/// Returns:
+/// - 圖片下載 URL，或 null
+Future<String?> uploadAvatar(String id) async { ... }
+```
+
+---
+
+## 4. Naming Conventions
+
+* `UpperCamelCase`: classes, widgets
+* `lowerCamelCase`: variables, methods
+* `kUpperCamelCase` or `lower_snake_case`: constants (follow project consistency)
+
+---
+
+## 5. Code Quality Rules
+
+* Always prefer modifying existing code over creating new files.
+* Ensure new features integrate with existing architecture.
+* Avoid duplicate services, controllers, or logic layers.
+* Keep business logic out of UI widgets.
+
+---
+
+## 6. Formatting
+
+Run the following command before committing:
+
+```bash
+dart format .
+```
+
+---
+
+## 7. Enforcement (Optional)
+
+If stronger enforcement is needed:
+
+* Add rules to `docs/coding_style.md`
+* Implement pre-commit hooks or CI checks
+
+---
+
+## 8. General Rule
+
+Avoid duplicate abstractions under all circumstances.
