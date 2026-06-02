@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -49,7 +50,14 @@ class ElevationApiService {
       'key': apiKey,
     });
 
-    final resp = await _client.get(uri);
+    final resp = await _client
+        .get(uri)
+        .timeout(
+          const Duration(seconds: 20),
+          onTimeout: () {
+            throw TimeoutException('Elevation API 請求逾時');
+          },
+        );
     if (resp.statusCode != 200) {
       throw StateError('Elevation API 呼叫失敗：${resp.statusCode}');
     }

@@ -11,6 +11,8 @@ import '../widgets/social_login_section.dart';
 import 'register_page.dart';
 import 'home_page.dart';
 import '../api/auth_api.dart';
+import '../widgets/error_snack_bar.dart';
+import '../widgets/success_snack_bar.dart';
 
 //登入頁面，目前提供可用的google功能，fb line 自訂登入開發中，之後有時間可以提供免登入體驗模式
 class LoginPage extends StatefulWidget {
@@ -82,16 +84,30 @@ class _LoginPageState extends State<LoginPage> {
         _accountController.text.trim(),
         _passwordController.text.trim(),
       );
+
+      final isOk = result['ok'] == true;
+      if (!isOk) {
+        final message = (result['message'] ?? '登入失敗，請稍後再試').toString();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            ErrorSnackBar(
+              message: message,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+
       final user = Map<String, dynamic>.from(result['user'] as Map);
       await _syncBackendUserProfile(user);
       await FirebaseAuth.instance.signOut();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('登入成功', style: TextStyle(fontSize: 16)),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
+          SuccessSnackBar(
+            message: '登入成功',
+            duration: const Duration(seconds: 2),
           ),
         );
         Navigator.pushReplacement(
@@ -99,22 +115,11 @@ class _LoginPageState extends State<LoginPage> {
           MaterialPageRoute(builder: (context) => const HomePage()),
         );
       }
-    } on TimeoutException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('登入逾時：${e.message ?? '請確認後端是否已啟動'}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('登入失敗：$e', style: TextStyle(fontSize: 16)),
-            backgroundColor: Colors.red,
+          ErrorSnackBar(
+            message: '登入失敗：$e',
             duration: const Duration(seconds: 3),
           ),
         );
@@ -156,10 +161,9 @@ class _LoginPageState extends State<LoginPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Google 登入成功'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
+          SuccessSnackBar(
+            message: 'Google 登入成功',
+            duration: const Duration(seconds: 2),
           ),
         );
         Navigator.pushReplacement(
@@ -177,15 +181,18 @@ class _LoginPageState extends State<LoginPage> {
       };
 
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          ErrorSnackBar(message: message, duration: const Duration(seconds: 3)),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Google 登入失敗：$e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          ErrorSnackBar(
+            message: 'Google 登入失敗：$e',
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

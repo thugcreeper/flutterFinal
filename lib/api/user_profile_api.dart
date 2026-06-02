@@ -22,6 +22,38 @@ class UserProfileApiService {
     return baseUrl.trim().replaceAll(RegExp(r'\/$'), '');
   }
 
+  /// 檢查後端登入狀態，失敗時不拋出例外，回傳 false。
+  ///
+  /// 主要給 AuthGate 使用，避免啟動流程因預期中的 401 中斷。
+  Future<bool> hasValidSession() async {
+    final token = await _storage.read(key: 'accessToken');
+    if (token == null || token.isEmpty) {
+      return false;
+    }
+
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$_baseUrl/users/me'),
+            headers: <String, String>{'Authorization': 'Bearer $token'},
+          )
+          .timeout(_requestTimeout);
+
+      if (response.statusCode == 200) {
+        return true;
+      }
+
+      if (response.statusCode == 401) {
+        await logout();
+        return false;
+      }
+
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>> getMe() async {
     final token = await _storage.read(key: 'accessToken');
     if (token == null || token.isEmpty) {
@@ -40,6 +72,11 @@ class UserProfileApiService {
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+
+    if (response.statusCode == 401) {
+      await logout();
+      throw Exception('登入狀態已失效，請重新登入');
     }
 
     throw Exception('取得使用者資訊失敗: ${response.body}');

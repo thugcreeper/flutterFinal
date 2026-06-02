@@ -9,13 +9,8 @@ class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
   Future<bool> _hasBackendSession() async {
-    try {
-      final api = UserProfileApiService();
-      await api.getMe();
-      return true;
-    } catch (_) {
-      return false;
-    }
+    final api = UserProfileApiService();
+    return api.hasValidSession();
   }
 
   @override

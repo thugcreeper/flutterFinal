@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api/user_profile_api.dart';
+import '../widgets/error_snack_bar.dart';
+import '../widgets/success_snack_bar.dart';
 
 class AccountManagementPage extends StatefulWidget {
   const AccountManagementPage({super.key});
@@ -30,11 +32,21 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
   // ── 變更密碼 ───────────────────────────────────────────
   Future<void> _handleChangePassword() async {
     if (_newPasswordController.text != _confirmPasswordController.text) {
-      _showSnackBar('新密碼與確認密碼不一致');
+      ScaffoldMessenger.of(context).showSnackBar(
+        ErrorSnackBar(
+          message: '新密碼與確認密碼不一致',
+          duration: const Duration(seconds: 2),
+        ),
+      );
       return;
     }
     if (_newPasswordController.text.length < 6) {
-      _showSnackBar('新密碼至少需要 6 個字元');
+      ScaffoldMessenger.of(context).showSnackBar(
+        ErrorSnackBar(
+          message: '新密碼至少需要 6 個字元',
+          duration: const Duration(seconds: 2),
+        ),
+      );
       return;
     }
 
@@ -52,7 +64,12 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
       await user.updatePassword(_newPasswordController.text);
 
       if (mounted) {
-        _showSnackBar('密碼已成功更新');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SuccessSnackBar(
+            message: '密碼已成功更新',
+            duration: const Duration(seconds: 2),
+          ),
+        );
         _currentPasswordController.clear();
         _newPasswordController.clear();
         _confirmPasswordController.clear();
@@ -64,7 +81,11 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
         'requires-recent-login' => '請重新登入後再試',
         _ => '更新失敗：${e.message}',
       };
-      if (mounted) _showSnackBar(message);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          ErrorSnackBar(message: message, duration: const Duration(seconds: 2)),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -115,21 +136,22 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
         final message = e.code == 'requires-recent-login'
             ? '請重新登入後再試'
             : '刪除失敗：${e.message}';
-        _showSnackBar(message);
+        ScaffoldMessenger.of(context).showSnackBar(
+          ErrorSnackBar(message: message, duration: const Duration(seconds: 2)),
+        );
       }
     } catch (e) {
       if (mounted) {
-        _showSnackBar('刪除失敗：$e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          ErrorSnackBar(
+            message: '刪除失敗：$e',
+            duration: const Duration(seconds: 2),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

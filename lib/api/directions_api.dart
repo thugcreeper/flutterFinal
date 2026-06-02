@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -25,7 +26,14 @@ class DirectionsApiService {
     }
 
     final uri = _buildDirectionsUri(points, apiKey);
-    final response = await _client.get(uri);
+    final response = await _client
+        .get(uri)
+        .timeout(
+          const Duration(seconds: 20),
+          onTimeout: () {
+            throw TimeoutException('Directions API 請求逾時');
+          },
+        );
 
     if (response.statusCode != 200) {
       throw StateError('Directions API 呼叫失敗：${response.statusCode}');

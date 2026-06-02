@@ -29,10 +29,8 @@ The header must include:
 Example:
 
 ```dart
-// File: lib/pages/edit_profile_page.dart
-// Purpose: Edit user profile and upload avatar to Firebase Storage
-// Author: <your name>
-// Date: YYYY-MM-DD
+// 這個檔案負責使用者資料編輯功能。
+// 提供資料更新與頭像上傳功能。
 ```
 
 ---

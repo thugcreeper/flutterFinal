@@ -11,6 +11,7 @@ Record the following information:
 * Important design decisions
 * Modified files
 * Newly created files
+* put log file in logs/developementLogs
 
 ### User Feedback Log
 
@@ -20,8 +21,8 @@ Record user feedback, including:
 * Opinions
 * Coding style requirements
 * Architecture requirements
-
-### Mistake Log
+* put log file in logs/feedbackLogs
+### Error Log
 
 If the user reports problems or expresses dissatisfaction with generated code:
 
@@ -30,7 +31,7 @@ Record:
 * The issue
 * The root cause
 * What should be avoided in future implementations
-
+* put log file in logs/errorLogs
 Do not repeat previously recorded mistakes.
 
 ### Log Storage
@@ -39,8 +40,9 @@ Maintain development logs in a dedicated file.
 
 Preferred formats:
 
-* Markdown (.md)
+* Markdown (.md) - best
 * JSON (.json)
 * Text (.txt)
-
+* filename example:development_20260531_120000
 Update the log whenever significant code changes are made.
+Please put logfile in  their corresponging folder,example:errorlog put in /logs/errorLogs,Development log put in /logs/developementLogs

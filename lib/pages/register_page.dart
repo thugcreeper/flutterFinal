@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'register_success_page.dart';
 import '../api/auth_api.dart';
+import '../widgets/error_snack_bar.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -46,6 +47,21 @@ class _RegisterPageState extends State<RegisterPage> {
         _passwordController.text.trim(),
         name,
       );
+
+      final isOk = result['ok'] == true;
+      if (!isOk) {
+        final message = (result['message'] ?? '註冊失敗，請稍後再試').toString();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            ErrorSnackBar(
+              message: message,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+
       final user = Map<String, dynamic>.from(result['user'] as Map);
       final userId = (user['id'] ?? '').toString();
       if (userId.isNotEmpty) {
@@ -71,9 +87,8 @@ class _RegisterPageState extends State<RegisterPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('註冊失敗：$e'),
-            backgroundColor: Colors.red,
+          ErrorSnackBar(
+            message: '註冊失敗：$e',
             duration: const Duration(seconds: 3),
           ),
         );

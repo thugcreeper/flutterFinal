@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../api/user_profile_api.dart';
 import 'login_page.dart';
 import 'edit_profile_page.dart';
+import '../widgets/error_snack_bar.dart';
 
 //使用者資料頁面，用firebase_auth取得使用者資料
 class UserProfilePage extends StatefulWidget {
@@ -36,9 +37,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('登出失敗：$e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          ErrorSnackBar(
+            message: '登出失敗：$e',
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     } finally {
       setState(() => _isLoading = false);
@@ -61,10 +65,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
       final backendUserId = await _storage.read(key: 'backendUserId');
       if (backendUserId == null || backendUserId.isEmpty) {
-        if (mounted)
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('找不到後端使用者 ID')));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            ErrorSnackBar(
+              message: '找不到後端使用者 ID，請重新登入',
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+
         return;
       }
 
@@ -76,10 +85,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
       );
       if (result == true && mounted) setState(() {});
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('開啟編輯失敗：$e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          ErrorSnackBar(
+            message: '開啟編輯失敗：$e',
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 

@@ -1,8 +1,3 @@
-// 檔案: lib/pages/edit_profile_page.dart
-// 用途: 編輯個人資料（只更新 Firestore，不直接變更 Firebase Auth）
-// 作者: (請填入作者)
-// 日期: 2026-05-30
-
 import 'dart:convert';
 import 'dart:io';
 
@@ -12,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import '../widgets/error_snack_bar.dart';
+import '../widgets/success_snack_bar.dart';
 
 /// 編輯個人資料頁面，允許更新名稱、Email、個人介紹與頭像。
 ///
@@ -94,9 +91,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('載入資料失敗：$e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          ErrorSnackBar(
+            message: '載入資料失敗：$e',
+            duration: const Duration(seconds: 2),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -115,9 +115,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('選取圖片失敗：$e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          ErrorSnackBar(
+            message: '選取圖片失敗：$e',
+            duration: const Duration(seconds: 2),
+          ),
+        );
       }
     }
   }
@@ -190,13 +193,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              '個人資料已更新',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 1),
+          SuccessSnackBar(
+            message: '個人資料已更新',
+            duration: const Duration(seconds: 1),
           ),
         );
         //延遲1秒後返回上一頁

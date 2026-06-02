@@ -5,9 +5,6 @@ import 'pages/user_profile_page.dart';
 import 'pages/setting_page.dart';
 import 'pages/auth_gate.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:google_maps_flutter_android/google_maps_flutter_android.dart';
-import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
-import 'map_Initializer.dart';
 import 'package:provider/provider.dart'; //狀態管理套件
 import '../providers/theme_provider.dart';
 
@@ -17,16 +14,10 @@ void main() async {
   try {
     await dotenv.load(fileName: ".env");
   } catch (e) {
-    print('Error loading .env file: $e');
+    debugPrint('Error loading .env file: $e');
   }
   // 初始化Firebase，將驗證等流程交給firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  //初始化google map
-  final GoogleMapsFlutterPlatform mapsImplementation =
-      GoogleMapsFlutterPlatform.instance;
-  if (mapsImplementation is GoogleMapsFlutterAndroid) {
-    await initializeMapRenderer();
-  }
   runApp(const MyApp());
 }
 
@@ -43,7 +34,7 @@ class MyApp extends StatelessWidget {
       create: (_) => ThemeProvider(),
       //Consumer 是我要監聽這個 Provider，它一變我就重建
       child: Consumer<ThemeProvider>(
-        builder: (_, themeProvider, __) => MaterialApp(
+        builder: (_, themeProvider, _) => MaterialApp(
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
             fontFamily: 'english',
