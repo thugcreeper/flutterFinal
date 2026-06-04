@@ -9,7 +9,7 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/social_login_section.dart';
 import 'register_page.dart';
-import 'home_page.dart';
+import 'login_success_page.dart';
 import '../api/auth_api.dart';
 import '../widgets/error_snack_bar.dart';
 import '../widgets/success_snack_bar.dart';
@@ -112,7 +112,7 @@ class _LoginPageState extends State<LoginPage> {
         );
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
+          MaterialPageRoute(builder: (context) => const LoginSuccessPage()),
         );
       }
     } catch (e) {
@@ -168,7 +168,7 @@ class _LoginPageState extends State<LoginPage> {
         );
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
+          MaterialPageRoute(builder: (_) => const LoginSuccessPage()),
         );
       }
     } on FirebaseAuthException catch (e) {
@@ -241,28 +241,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
 
                 const SizedBox(height: 12),
-
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      // TODO: 前往忘記密碼頁面
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF3B82F6),
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: const Text(
-                      '忘記密碼？',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
 
                 const SizedBox(height: 32),
 

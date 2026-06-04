@@ -74,7 +74,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '449590065627',
     projectId: 'flutterfinal-ridevoyage',
     storageBucket: 'flutterfinal-ridevoyage.firebasestorage.app',
-    iosClientId: '449590065627-j0anp6ff1thhovugk9h1h6v6ftr7s991.apps.googleusercontent.com',
+    iosClientId:
+        '449590065627-j0anp6ff1thhovugk9h1h6v6ftr7s991.apps.googleusercontent.com',
     iosBundleId: 'com.example.flutterApplication2',
   );
 
@@ -84,8 +85,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '449590065627',
     projectId: 'flutterfinal-ridevoyage',
     storageBucket: 'flutterfinal-ridevoyage.firebasestorage.app',
-    iosClientId: '449590065627-j0anp6ff1thhovugk9h1h6v6ftr7s991.apps.googleusercontent.com',
+    iosClientId:
+        '449590065627-j0anp6ff1thhovugk9h1h6v6ftr7s991.apps.googleusercontent.com',
     iosBundleId: 'com.example.flutterApplication2',
   );
-
 }

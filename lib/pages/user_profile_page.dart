@@ -33,7 +33,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
       await UserProfileApiService().logout();
       await _storage.delete(key: 'backendUserId');
       if (mounted) {
-        Navigator.of(context).pop();
+        //用pushAndRemove來將先前route全部銷毀
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+          (route) => false,
+        );
       }
     } catch (e) {
       if (mounted) {
