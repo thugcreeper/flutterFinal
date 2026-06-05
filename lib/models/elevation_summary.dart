@@ -1,4 +1,4 @@
-//儲存有關路線的海拔資訊摘要
+//這個code是儲存有關路線的海拔資訊摘要
 class ElevationSummary {
   const ElevationSummary({
     required this.startElevation,

@@ -19,13 +19,6 @@ Before creating any new class or file:
 
 All newly created files must include a header comment on the first line.
 
-The header must include:
-
-* File path
-* Purpose of the file
-* Author
-* Date
-
 Example:
 
 ```dart

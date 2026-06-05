@@ -7,6 +7,7 @@ import 'pages/auth_gate.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart'; //狀態管理套件
 import '../providers/theme_provider.dart';
+import '../providers/route_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,10 +29,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     //MaterialApp外要包一層ChangeNotifierProvider，提供ThemeProvider給整個app使用，
     //讓它能控制主題切換
-    return ChangeNotifierProvider(
+    return MultiProvider(
       //建立這個 Provider 的實例。這行的意思是：在 widget tree 這個位置放一個 ThemeProvider，
       //所有在它底下的 widget 都能取得它。
-      create: (_) => ThemeProvider(),
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => RouteProvider()),
+      ],
       //Consumer 是我要監聽這個 Provider，它一變我就重建
       child: Consumer<ThemeProvider>(
         builder: (_, themeProvider, _) => MaterialApp(

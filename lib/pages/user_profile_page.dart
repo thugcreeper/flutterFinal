@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../api/user_profile_api.dart';
 import 'login_page.dart';
 import 'edit_profile_page.dart';
+import 'saved_routes_page.dart';
 import '../widgets/error_snack_bar.dart';
 
 //使用者資料頁面，用firebase_auth取得使用者資料
@@ -204,18 +205,27 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       label: '簡介',
                       value: description.isEmpty ? '尚未提供簡介!' : description,
                     ),
-
-                    const SizedBox(height: 12),
-                    _buildInfoCard(
-                      icon: Icons.fingerprint,
-                      label: 'UID',
-                      value: backendUserId,
-                    ),
                     const SizedBox(height: 12),
                     _buildInfoCard(
                       icon: Icons.login,
                       label: '登入方式',
                       value: provider,
+                    ),
+                    const SizedBox(height: 12),
+                    // 我的路線卡片
+                    Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.route),
+                        title: const Text('我的路線'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                const SavedRoutesPage(selectable: true),
+                          ),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 32),
                     Row(
@@ -315,15 +325,24 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 _buildInfoCard(icon: Icons.email, label: 'Email', value: email),
                 const SizedBox(height: 12),
                 _buildInfoCard(
-                  icon: Icons.fingerprint,
-                  label: 'UID',
-                  value: user.uid,
-                ),
-                const SizedBox(height: 12),
-                _buildInfoCard(
                   icon: Icons.login,
                   label: '登入方式',
                   value: provider,
+                ),
+                const SizedBox(height: 12),
+                // 我的路線卡片
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.route),
+                    title: const Text('我的路線'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SavedRoutesPage(selectable: true),
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 32),
                 Row(

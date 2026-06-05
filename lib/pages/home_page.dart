@@ -1,20 +1,27 @@
+// 這個檔案是主頁面，包含地圖顯示、路線規劃、以及路線儲存功能。
 import 'dart:async';
 import 'dart:convert';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:RideVoyage/api/directions_api.dart';
 import 'package:RideVoyage/api/elevation_api.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../api/city_lookup_api.dart';
+import '../api/saved_route_api.dart';
 import '../api/tourism_search_api.dart';
 import '../models/directions_route.dart';
 import '../models/map_point.dart';
+import '../models/saved_route.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/nearby_search_results_panel.dart';
 import '../widgets/error_snack_bar.dart';
 import '../widgets/success_snack_bar.dart';
+import '../widgets/route_info_card.dart';
+import '../widgets/action_buttons.dart';
+import 'saved_routes_page.dart';
+import '../providers/route_provider.dart';
+import 'package:provider/provider.dart';
 
 // 主頁面，包含地圖顯示與路線規劃功能，登入後要來到這裡
 class HomePage extends StatefulWidget {
@@ -61,9 +68,22 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _restoreSavedRoutePoints();
+      context.read<RouteProvider>().addListener(_onRouteSelected);
     });
+  }
+
+  void _onRouteSelected() {
+    final route = context.read<RouteProvider>().selectedRoute;
+    if (route == null) return;
+
+    _loadSavedRoute(route);
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SuccessSnackBar(message: '已載入路線「${route.routeName}」'));
+    context.read<RouteProvider>().clear();
   }
 
   @override
@@ -625,80 +645,126 @@ class _HomePageState extends State<HomePage> {
     if (!mounted) return;
   }
 
-  //顯示路線資訊卡
-  Widget _buildStatusCard() {
-    return IgnorePointer(
-      ignoring: true,
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_routeDistanceText != null || _routeDurationText != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                '距離：${_routeDistanceText ?? 'N/A'}  |  預估時間：${_routeDurationText ?? 'N/A'}',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ],
-            if (_startElevation != null || _elevationErrorText != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                _elevationErrorText != null
-                    ? _elevationErrorText!
-                    : '起點高度：${_startElevation!.toStringAsFixed(1)} m  |  終點高度：${_endElevation!.toStringAsFixed(1)} m',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ],
-            if (_totalAscent != null && _totalDescent != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                '總爬升：${_totalAscent!.toStringAsFixed(1)} m  |  總下降：${_totalDescent!.toStringAsFixed(1)} m',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
+  /// 將已儲存路線的點位載入地圖，並重新查詢路線資訊。
+  ///
+  /// Parameters:
+  /// - route: 欲載入的 [SavedRoute]
+  Future<void> _loadSavedRoute(SavedRoute route) async {
+    if (route.points.isEmpty) return;
+
+    setState(() {
+      _isProcessingRoute = true;
+      _routePoints
+        ..clear()
+        ..addAll(route.points);
+      _markers.clear();
+      for (var i = 0; i < _routePoints.length; i++) {
+        final markerNumber = i + 1;
+        _markers.add(
+          Marker(
+            markerId: MarkerId('point_$markerNumber'),
+            position: _routePoints[i],
+            infoWindow: InfoWindow(title: '標記 $markerNumber'),
+            icon: BitmapDescriptor.defaultMarkerWithHue(_getMarkerHue(i)),
+          ),
+        );
+      }
+    });
+
+    try {
+      await _saveRoutePoints();
+      await _refreshRouteData();
+      if (mounted && _mapController != null && _routePoints.isNotEmpty) {
+        await _mapController!.animateCamera(
+          CameraUpdate.newLatLng(_routePoints.first),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessingRoute = false);
+    }
   }
 
-  //返回 刪除路線icon
-  Widget _buildActionButtons() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FloatingActionButton(
-          heroTag: 'undo-point',
-          onPressed: _isProcessingRoute ? null : _undoLastPoint,
-          tooltip: '復原最後一個標記',
-          child: const Icon(Icons.undo),
+  /// 開啟已儲存路線清單（selectable 模式），使用者選取後載入地圖。
+  Future<void> _openSavedRoutes() async {
+    final selected = await Navigator.push<SavedRoute>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SavedRoutesPage(selectable: true),
+      ),
+    );
+    if (!mounted || selected == null) return;
+    await _loadSavedRoute(selected);
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SuccessSnackBar(message: '已載入路線「${selected.routeName}」'));
+  }
+
+  /// 提示使用者輸入路線名稱，並將目前路線儲存至 Firestore。
+  Future<void> _saveCurrentRoute() async {
+    if (_routePoints.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(ErrorSnackBar(message: '目前沒有路線可以儲存'));
+      return;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(ErrorSnackBar(message: '尚未登入，無法儲存路線'));
+      return;
+    }
+
+    final routeName = await _promptForRouteName();
+    if (routeName == null || routeName.isEmpty) return;
+
+    try {
+      await SavedRouteApiService().saveRoute(
+        userId: user.uid,
+        routeName: routeName,
+        distance: _routeDistanceText ?? '',
+        duration: _routeDurationText ?? '',
+        points: _routePoints,
+        totalAscent: _totalAscent ?? 0.0,
+        totalDescent: _totalDescent ?? 0.0,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SuccessSnackBar(message: '路線「$routeName」已儲存'));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(ErrorSnackBar(message: '儲存失敗：$e'));
+    }
+  }
+
+  /// 顯示對話框讓使用者輸入路線名稱，回傳輸入值或 null（取消）。
+  Future<String?> _promptForRouteName() {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('儲存路線'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: '請輸入路線名稱'),
         ),
-        const SizedBox(height: 12),
-        FloatingActionButton(
-          heroTag: 'clear-route',
-          onPressed: _isProcessingRoute ? null : _clearRoute,
-          tooltip: '清除路線',
-          backgroundColor: Colors.redAccent,
-          foregroundColor: Colors.white,
-          child: const Icon(Icons.delete_outline, size: 40),
-        ),
-      ],
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+            child: const Text('確定'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -756,7 +822,17 @@ class _HomePageState extends State<HomePage> {
               left: 0,
               right: 0,
               top: 16,
-              child: SafeArea(child: _buildStatusCard()),
+              child: SafeArea(
+                child: RouteInfoCard(
+                  routeDistanceText: _routeDistanceText,
+                  routeDurationText: _routeDurationText,
+                  startElevation: _startElevation,
+                  endElevation: _endElevation,
+                  totalAscent: _totalAscent,
+                  totalDescent: _totalDescent,
+                  elevationErrorText: _elevationErrorText,
+                ),
+              ),
             ),
           if (_showNearbySearchPanel)
             Positioned.fill(
@@ -783,7 +859,15 @@ class _HomePageState extends State<HomePage> {
               key: const ValueKey('route-action-buttons'),
               left: 16,
               bottom: 4,
-              child: SafeArea(child: _buildActionButtons()),
+              child: SafeArea(
+                child: ActionButtons(
+                  isProcessingRoute: _isProcessingRoute,
+                  undoLastPoint: _undoLastPoint,
+                  clearRoute: _clearRoute,
+                  saveCurrentRoute: _saveCurrentRoute,
+                  openSavedRoutes: _openSavedRoutes,
+                ),
+              ),
             ),
           if (_isProcessingRoute)
             Positioned.fill(
