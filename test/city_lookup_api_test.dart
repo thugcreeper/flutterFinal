@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
-import 'package:RideVoyage/api/city_lookup_api.dart';
+import 'package:ridevoyage/api/city_lookup_api.dart';
 
 void main() {
   test('只要回傳 city 就能正確解析縣市', () async {

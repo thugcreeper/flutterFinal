@@ -5,7 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
-import 'package:RideVoyage/api/scenic_spot_api.dart';
+import 'package:ridevoyage/api/scenic_spot_api.dart';
 
 void main() {
   test('關鍵字「碼頭」可以命中大稻埕碼頭', () async {

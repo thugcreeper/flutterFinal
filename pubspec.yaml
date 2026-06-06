@@ -1,4 +1,4 @@
-name: RideVoyage
+name: ridevoyage
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -25,6 +25,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
   google_maps_flutter: ^2.17.0
   google_maps_flutter_android: ^2.19.8
   google_maps_flutter_platform_interface: ^2.15.0
@@ -56,6 +57,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -81,3 +83,8 @@ flutter:
       fonts:
         - asset: assets/fonts/english.ttf 
  
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icons/appIcon.jpg"

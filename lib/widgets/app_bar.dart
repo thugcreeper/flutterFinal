@@ -26,6 +26,7 @@ class _CustomAppBarState extends State<CustomAppBar>
     with SingleTickerProviderStateMixin {
   static const String _scenicLabel = '景點';
   static const String _restaurantLabel = '餐廳';
+  static const String _storeLabel = '便利商店';
   static const double _triggerDistance = 48.0;
 
   bool _isSearching = false;
@@ -140,6 +141,13 @@ class _CustomAppBarState extends State<CustomAppBar>
                         child: _buildSearchCategoryButton(
                           label: _restaurantLabel,
                           icon: Icons.restaurant_outlined,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _buildSearchCategoryButton(
+                          label: _storeLabel,
+                          icon: Icons.store_outlined,
                         ),
                       ),
                     ],

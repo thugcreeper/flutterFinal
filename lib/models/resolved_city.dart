@@ -8,11 +8,17 @@ class ResolvedCity {
 
   /// TDX Tourism API 使用的縣市代碼。
   final String tdxCityKey;
+  // 行政區
+  final String? area;
 
   /// 建立城市反查結果。
   ///
   /// Parameters:
   /// - displayName: 顯示給使用者看的城市名稱
   /// - tdxCityKey: TDX Tourism API 使用的縣市代碼
-  const ResolvedCity({required this.displayName, required this.tdxCityKey});
+  const ResolvedCity({
+    required this.displayName,
+    required this.tdxCityKey,
+    this.area,
+  });
 }

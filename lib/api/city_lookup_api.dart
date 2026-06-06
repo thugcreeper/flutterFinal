@@ -1,6 +1,6 @@
 // 這個檔案負責透過經緯度反查台灣城市名稱與 TDX 縣市代碼。
 // 提供附近搜尋使用的城市辨識功能。
-
+// ex:https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=25.15089&lon=121.77531&zoom=10&addressdetails=1&accept-language=zh-TW
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -163,6 +163,11 @@ class CityLookupService {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final address = data['address'] as Map<String, dynamic>? ?? {};
       final displayName = data['display_name']?.toString();
+      final area =
+          address['suburb']?.toString() ??
+          address['town']?.toString() ??
+          address['city_district']?.toString() ??
+          address['quarter']?.toString();
 
       final candidates = <String?>[
         address['city']?.toString(),
@@ -181,7 +186,11 @@ class CityLookupService {
           debugPrint(
             'CityLookupService: 座標=($latitude, $longitude) -> ${resolvedCity.displayName} / ${resolvedCity.tdxCityKey}',
           );
-          return resolvedCity;
+          return ResolvedCity(
+            displayName: resolvedCity.displayName,
+            tdxCityKey: resolvedCity.tdxCityKey,
+            area: area,
+          );
         }
       }
 

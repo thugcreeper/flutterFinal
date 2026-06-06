@@ -13,6 +13,9 @@ class NearbySearchResultsPanel extends StatelessWidget {
   /// 目前判斷出的城市名稱。
   final String? cityLabel;
 
+  /// 目前判斷出的區域名稱。
+  final String? areaLabel;
+
   /// 目前搜尋分類。
   final String category;
 
@@ -45,6 +48,7 @@ class NearbySearchResultsPanel extends StatelessWidget {
     super.key,
     required this.isLoading,
     required this.cityLabel,
+    required this.areaLabel,
     required this.category,
     required this.keyword,
     required this.errorMessage,
@@ -94,7 +98,9 @@ class NearbySearchResultsPanel extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    cityLabel == null ? '正在判斷目前城市' : '目前城市：$cityLabel',
+                    cityLabel == null
+                        ? '正在判斷目前城市'
+                        : '目前城市：$cityLabel $areaLabel',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,

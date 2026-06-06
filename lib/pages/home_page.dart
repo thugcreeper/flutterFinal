@@ -3,13 +3,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:RideVoyage/api/directions_api.dart';
-import 'package:RideVoyage/api/elevation_api.dart';
+import 'package:ridevoyage/api/directions_api.dart';
+import 'package:ridevoyage/api/elevation_api.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api/city_lookup_api.dart';
 import '../api/saved_route_api.dart';
 import '../api/tourism_search_api.dart';
+import '../api/convenience_store_api.dart';
 import '../models/directions_route.dart';
 import '../models/map_point.dart';
 import '../models/saved_route.dart';
@@ -43,6 +44,7 @@ class _HomePageState extends State<HomePage> {
   final DirectionsApiService _directionsApiService = DirectionsApiService();
   final ElevationApiService _elevationApiService = ElevationApiService();
   final TourismSearchService _searchService = TourismSearchService();
+  final ConvenienceStoreApi _convenienceStoreApi = ConvenienceStoreApi();
   final CityLookupService _cityLookupService = CityLookupService();
   final List<LatLng> _routePoints = []; // 用來存放使用者點選的路線點位
   final Set<Marker> _markers = {}; // 用來存放地圖上的標記，與 _routePoints 對應
@@ -52,6 +54,7 @@ class _HomePageState extends State<HomePage> {
   bool _showNearbySearchPanel = false;
   bool _isNearbySearchLoading = false;
   String? _nearbySearchCityLabel;
+  String? _nearbySearchAreaLabel;
   String? _nearbySearchError;
   String? _nearbySearchKeyword;
   String _nearbySearchCategory = _scenicLabel;
@@ -134,7 +137,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   LatLng _defaultSearchCenter() {
-    return _currentMapCenter ?? const LatLng(25.15089, 121.77531);
+    return _currentMapCenter ?? const LatLng(25.15089, 121.77531); //NTOU
   }
 
   Future<int?> _appendRoutePoint(LatLng position) async {
@@ -250,6 +253,7 @@ class _HomePageState extends State<HomePage> {
       if (resolvedCity == null) {
         setState(() {
           _nearbySearchCityLabel = '未知';
+          _nearbySearchAreaLabel = '未知';
           _nearbySearchError = '無法判斷目前地圖中心所在城市，有可能是因為地圖中心點在海上，請稍微移動地圖後再試一次';
         });
         return;
@@ -277,6 +281,7 @@ class _HomePageState extends State<HomePage> {
 
       setState(() {
         _nearbySearchCityLabel = resolvedCity.displayName;
+        _nearbySearchAreaLabel = resolvedCity.area ?? '未知';
         _nearbySearchResults = results;
         _nearbySearchError = results.isEmpty
             ? '目前城市內沒有符合的$selectedCategory結果'
@@ -298,6 +303,7 @@ class _HomePageState extends State<HomePage> {
 
       setState(() {
         _nearbySearchCityLabel = '未知';
+        _nearbySearchAreaLabel = '未知';
         _nearbySearchError = '搜尋失敗：$e';
         _nearbySearchResults = [];
       });
@@ -362,6 +368,7 @@ class _HomePageState extends State<HomePage> {
       _showNearbySearchPanel = false;
       _isNearbySearchLoading = false;
       _nearbySearchCityLabel = null;
+      _nearbySearchAreaLabel = null;
       _nearbySearchError = null;
       _nearbySearchKeyword = null;
       _nearbySearchResults = [];
@@ -840,6 +847,7 @@ class _HomePageState extends State<HomePage> {
               child: NearbySearchResultsPanel(
                 isLoading: _isNearbySearchLoading,
                 cityLabel: _nearbySearchCityLabel,
+                areaLabel: _nearbySearchAreaLabel,
                 category: _nearbySearchCategory,
                 keyword: _nearbySearchKeyword,
                 errorMessage: _nearbySearchError,
