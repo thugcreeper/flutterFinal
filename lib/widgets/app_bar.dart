@@ -26,7 +26,7 @@ class _CustomAppBarState extends State<CustomAppBar>
     with SingleTickerProviderStateMixin {
   static const String _scenicLabel = '景點';
   static const String _restaurantLabel = '餐廳';
-  static const String _storeLabel = '便利商店';
+  static const String _storeLabel = '超商';
   static const double _triggerDistance = 48.0;
 
   bool _isSearching = false;
@@ -321,7 +321,7 @@ class _CustomAppBarState extends State<CustomAppBar>
                     style: const TextStyle(fontSize: 16),
                     onSubmitted: (value) async {
                       final keyword = value.trim();
-                      if (keyword.isEmpty) return;
+
                       final selectedCategory = _selectedSearchCategory;
                       _closeSearch();
                       await widget.onSearchSubmitted?.call(

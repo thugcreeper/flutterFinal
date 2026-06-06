@@ -7,7 +7,6 @@ import 'package:ridevoyage/api/directions_api.dart';
 import 'package:ridevoyage/api/elevation_api.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../api/city_lookup_api.dart';
 import '../api/saved_route_api.dart';
 import '../api/tourism_search_api.dart';
 import '../api/convenience_store_api.dart';
@@ -23,6 +22,7 @@ import '../widgets/action_buttons.dart';
 import 'saved_routes_page.dart';
 import '../providers/route_provider.dart';
 import 'package:provider/provider.dart';
+import '../controller/nearby_search_controller.dart';
 
 // 主頁面，包含地圖顯示與路線規劃功能，登入後要來到這裡
 class HomePage extends StatefulWidget {
@@ -36,29 +36,22 @@ class _HomePageState extends State<HomePage> {
   static const String _savedRoutePointsKey = 'saved_route_points';
   static const String _scenicLabel = '景點';
   static const String _restaurantLabel = '餐廳';
-
+  static const String _storeLabel = '超商';
+  LatLng _currentMapCenter = LatLng(25.15089, 121.77531);
   GoogleMapController? _mapController;
-  LatLng? _currentMapCenter;
   final DraggableScrollableController _nearbySearchSheetController =
       DraggableScrollableController();
   final DirectionsApiService _directionsApiService = DirectionsApiService();
   final ElevationApiService _elevationApiService = ElevationApiService();
-  final TourismSearchService _searchService = TourismSearchService();
+  final TourismSearchService _tourismSearchService = TourismSearchService();
   final ConvenienceStoreApi _convenienceStoreApi = ConvenienceStoreApi();
-  final CityLookupService _cityLookupService = CityLookupService();
+  late final NearbySearchController _searchController =
+      NearbySearchController();
   final List<LatLng> _routePoints = []; // 用來存放使用者點選的路線點位
   final Set<Marker> _markers = {}; // 用來存放地圖上的標記，與 _routePoints 對應
   Set<Polyline> _polylines = {}; // 用來存放從 Directions API 取得的路線 polyline，理論上只會有一條
   bool _isProcessingRoute = false;
   bool _showRouteInfo = false;
-  bool _showNearbySearchPanel = false;
-  bool _isNearbySearchLoading = false;
-  String? _nearbySearchCityLabel;
-  String? _nearbySearchAreaLabel;
-  String? _nearbySearchError;
-  String? _nearbySearchKeyword;
-  String _nearbySearchCategory = _scenicLabel;
-  List<MapPoint> _nearbySearchResults = [];
   String? _routeDistanceText;
   String? _routeDurationText;
   // 海拔摘要
@@ -71,10 +64,21 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-
+    _searchController.addListener(_onSearchStateChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<RouteProvider>().addListener(_onRouteSelected);
     });
+  }
+
+  void _onSearchStateChanged() {
+    if (!mounted) return;
+    setState(() {});
+
+    // 有新結果時移動地圖
+    final center = _searchController.lastResultCenter;
+    if (center != null) {
+      _mapController?.animateCamera(CameraUpdate.newLatLngZoom(center, 16));
+    }
   }
 
   void _onRouteSelected() {
@@ -92,6 +96,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _nearbySearchSheetController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -121,23 +126,17 @@ class _HomePageState extends State<HomePage> {
 
   // 根據目前的搜尋結果清單建立對應的 Marker Set，並在 markerId 中包含類型與 id 以利識別。
   Set<Marker> _buildNearbySearchMarkers() {
-    return _nearbySearchResults.map((point) {
+    return _searchController.results.map((point) {
       return Marker(
         markerId: MarkerId('search_${point.typeLabel}_${point.id}'),
         position: LatLng(point.latitude, point.longitude),
         icon: BitmapDescriptor.defaultMarkerWithHue(
-          point.typeLabel == _restaurantLabel
-              ? BitmapDescriptor.hueRed
-              : BitmapDescriptor.hueAzure,
-        ),
+          point.markerHue,
+        ), // ← 用 point 自己的顏色
         infoWindow: InfoWindow(title: point.name, snippet: point.typeLabel),
         onTap: () => _focusNearbyResult(point),
       );
     }).toSet();
-  }
-
-  LatLng _defaultSearchCenter() {
-    return _currentMapCenter ?? const LatLng(25.15089, 121.77531); //NTOU
   }
 
   Future<int?> _appendRoutePoint(LatLng position) async {
@@ -224,98 +223,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _handleNearbySearch(String keyword, String category) async {
-    final normalizedKeyword = keyword.trim();
-    final selectedCategory = category == _restaurantLabel
-        ? _restaurantLabel
-        : _scenicLabel;
-    final center = _defaultSearchCenter();
-
-    setState(() {
-      _showNearbySearchPanel = true;
-      _isNearbySearchLoading = true;
-      _nearbySearchError = null;
-      _nearbySearchKeyword = normalizedKeyword;
-      _nearbySearchCategory = selectedCategory;
-      _nearbySearchResults = [];
-    });
-
-    try {
-      final resolvedCity = await _cityLookupService.resolveCityFromCoordinates(
-        latitude: center.latitude,
-        longitude: center.longitude,
-      );
-
-      if (!mounted) {
-        return;
-      }
-
-      if (resolvedCity == null) {
-        setState(() {
-          _nearbySearchCityLabel = '未知';
-          _nearbySearchAreaLabel = '未知';
-          _nearbySearchError = '無法判斷目前地圖中心所在城市，有可能是因為地圖中心點在海上，請稍微移動地圖後再試一次';
-        });
-        return;
-      }
-
-      final results = selectedCategory == _scenicLabel
-          ? await _searchService.searchScenicSpotsNearby(
-              city: resolvedCity.tdxCityKey,
-              latitude: center.latitude,
-              longitude: center.longitude,
-              keyword: normalizedKeyword.isEmpty ? null : normalizedKeyword,
-              top: 50,
-            )
-          : await _searchService.searchRestaurantsNearby(
-              city: resolvedCity.tdxCityKey,
-              latitude: center.latitude,
-              longitude: center.longitude,
-              keyword: normalizedKeyword.isEmpty ? null : normalizedKeyword,
-              top: 50,
-            );
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _nearbySearchCityLabel = resolvedCity.displayName;
-        _nearbySearchAreaLabel = resolvedCity.area ?? '未知';
-        _nearbySearchResults = results;
-        _nearbySearchError = results.isEmpty
-            ? '目前城市內沒有符合的$selectedCategory結果'
-            : null;
-      });
-
-      if (results.isNotEmpty && _mapController != null) {
-        await _mapController!.animateCamera(
-          CameraUpdate.newLatLngZoom(
-            LatLng(results.first.latitude, results.first.longitude),
-            16,
-          ),
-        );
-      }
-    } catch (e) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _nearbySearchCityLabel = '未知';
-        _nearbySearchAreaLabel = '未知';
-        _nearbySearchError = '搜尋失敗：$e';
-        _nearbySearchResults = [];
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isNearbySearchLoading = false;
-        });
-      }
-    }
-  }
-
   // 根據目前的搜尋結果清單建立對應的 Marker Set，並在 markerId 中包含類型與 id 以利識別。
   Future<void> _handleNearbyResultRouteAction(MapPoint point) async {
     try {
@@ -364,15 +271,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _closeNearbySearchPanel() {
-    setState(() {
-      _showNearbySearchPanel = false;
-      _isNearbySearchLoading = false;
-      _nearbySearchCityLabel = null;
-      _nearbySearchAreaLabel = null;
-      _nearbySearchError = null;
-      _nearbySearchKeyword = null;
-      _nearbySearchResults = [];
-    });
+    _searchController.closePanel();
   }
 
   //將目前的路線點位清單儲存到 SharedPreferences
@@ -785,12 +684,24 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: CustomAppBar(
         initialSearchCenter: _currentMapCenter,
-        onSearchSubmitted: _handleNearbySearch,
+        onSearchSubmitted: (keyword, category) =>
+            _searchController.handleNearbySearch(
+              keyword,
+              category,
+              searchScenicSpots: _tourismSearchService.searchScenicSpotsNearby,
+              searchRestaurants: _tourismSearchService.searchRestaurantsNearby,
+              searchStores: _convenienceStoreApi.getNearby711Stores,
+            ),
         // pull to refresh 在附近搜尋面板開啟時才啟用
-        onPullRefresh: _showNearbySearchPanel
-            ? () => _handleNearbySearch(
-                _nearbySearchKeyword ?? '',
-                _nearbySearchCategory,
+        onPullRefresh: _searchController.showPanel
+            ? () => _searchController.handleNearbySearch(
+                _searchController.currentKeyword ?? '',
+                _searchController.currentCategory,
+                searchScenicSpots:
+                    _tourismSearchService.searchScenicSpotsNearby,
+                searchRestaurants:
+                    _tourismSearchService.searchRestaurantsNearby,
+                searchStores: _convenienceStoreApi.getNearby711Stores,
               )
             : null,
       ),
@@ -805,12 +716,16 @@ class _HomePageState extends State<HomePage> {
               setState(() {
                 _mapController = controller;
                 _currentMapCenter = const LatLng(25.15089, 121.77531);
+                _searchController.updateMapCenter(_currentMapCenter);
               });
             },
             //當地圖移動時更新目前的中心座標，這樣搜尋功能就能以目前地圖中心為基準。
             onCameraMove: (position) {
               setState(() {
                 _currentMapCenter = position.target;
+                _searchController.updateMapCenter(
+                  position.target,
+                ); //controller也要更新，這樣搜尋功能才會以目前地圖中心為基準
               });
             },
             onTap: _handleMapTap,
@@ -819,7 +734,7 @@ class _HomePageState extends State<HomePage> {
             myLocationButtonEnabled: false,
             zoomControlsEnabled: true,
             padding: EdgeInsets.only(
-              bottom: _showNearbySearchPanel ? 320 : 24,
+              bottom: _searchController.showPanel ? 320 : 24,
               right: 16,
             ),
           ),
@@ -841,20 +756,25 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-          if (_showNearbySearchPanel)
+          if (_searchController.showPanel)
             Positioned.fill(
               key: const ValueKey('nearby-search-panel'),
               child: NearbySearchResultsPanel(
-                isLoading: _isNearbySearchLoading,
-                cityLabel: _nearbySearchCityLabel,
-                areaLabel: _nearbySearchAreaLabel,
-                category: _nearbySearchCategory,
-                keyword: _nearbySearchKeyword,
-                errorMessage: _nearbySearchError,
-                results: _nearbySearchResults,
-                onRefresh: () => _handleNearbySearch(
-                  _nearbySearchKeyword ?? '',
-                  _nearbySearchCategory,
+                isLoading: _searchController.isLoading,
+                cityLabel: _searchController.cityLabel,
+                areaLabel: _searchController.areaLabel,
+                category: _searchController.currentCategory,
+                keyword: _searchController.currentKeyword,
+                errorMessage: _searchController.errorMessage,
+                results: _searchController.results,
+                onRefresh: () => _searchController.handleNearbySearch(
+                  _searchController.currentKeyword ?? '',
+                  _searchController.currentCategory,
+                  searchScenicSpots:
+                      _tourismSearchService.searchScenicSpotsNearby,
+                  searchRestaurants:
+                      _tourismSearchService.searchRestaurantsNearby,
+                  searchStores: _convenienceStoreApi.getNearby711Stores,
                 ),
                 onClose: _closeNearbySearchPanel,
                 onTapPoint: _focusNearbyResult,
@@ -862,7 +782,7 @@ class _HomePageState extends State<HomePage> {
                 sheetController: _nearbySearchSheetController,
               ),
             ),
-          if (_routePoints.isNotEmpty && !_showNearbySearchPanel)
+          if (_routePoints.isNotEmpty && !_searchController.showPanel)
             Positioned(
               key: const ValueKey('route-action-buttons'),
               left: 16,
