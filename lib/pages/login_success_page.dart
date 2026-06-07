@@ -76,7 +76,7 @@ class _LoginSuccessPageState extends State<LoginSuccessPage>
     // 定義背景漸層與文字色彩
     final backgroundColor = isDark
         ? const Color(0xFF1E1B29)
-        : const Color(0xFFF9FAFB);
+        : const Color.fromARGB(255, 237, 233, 223);
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
     final subtitleColor = isDark ? Colors.grey[400]! : const Color(0xFF4B5563);
 

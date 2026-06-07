@@ -136,88 +136,104 @@ class _UserProfilePageState extends State<UserProfilePage> {
           );
         }
 
-        return Scaffold(
-          appBar: AppBar(title: const Text('個人資料'), elevation: 0),
-          body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-            stream: FirebaseFirestore.instance
-                .collection('users')
-                .doc(backendUserId)
-                .snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
+        return Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color.fromARGB(255, 161, 195, 221),
+                Color.fromARGB(255, 255, 255, 255),
+              ],
+            ),
+          ),
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: AppBar(
+              title: const Text('個人資料'),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+            ),
+            body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(backendUserId)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-              final data = snapshot.data?.data();
-              if (data == null) {
-                return const Center(child: Text('找不到使用者資料'));
-              }
+                final data = snapshot.data?.data();
+                if (data == null) {
+                  return const Center(child: Text('找不到使用者資料'));
+                }
 
-              final name = (data['name'] ?? '').toString();
-              final account = (data['account'] ?? '').toString();
-              final email = (data['email'] ?? '').toString();
-              final description = (data['description'] ?? '').toString();
-              final imageUrl = (data['imageUrl'] ?? '').toString();
-              final provider = (data['provider'] ?? 'local').toString();
+                final name = (data['name'] ?? '').toString();
+                final account = (data['account'] ?? '').toString();
+                final email = (data['email'] ?? '').toString();
+                final description = (data['description'] ?? '').toString();
+                final imageUrl = (data['imageUrl'] ?? '').toString();
+                final provider = (data['provider'] ?? 'local').toString();
 
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Center(
-                      child: Column(
-                        children: [
-                          CircleAvatar(
-                            radius: 60,
-                            backgroundImage: imageUrl.isNotEmpty
-                                ? NetworkImage(imageUrl)
-                                : null,
-                            child: imageUrl.isEmpty
-                                ? const Icon(Icons.person, size: 60)
-                                : null,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            name.isEmpty ? '無名稱' : name,
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      Center(
+                        child: Column(
+                          children: [
+                            CircleAvatar(
+                              radius: 60,
+                              backgroundImage: imageUrl.isNotEmpty
+                                  ? NetworkImage(imageUrl)
+                                  : null,
+                              child: imageUrl.isEmpty
+                                  ? const Icon(Icons.person, size: 60)
+                                  : null,
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 16),
+                            Text(
+                              name.isEmpty ? '無名稱' : name,
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 32),
-                    _buildInfoCard(
-                      icon: Icons.person,
-                      label: '帳號',
-                      value: account,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildInfoCard(
-                      icon: Icons.email,
-                      label: '電子信箱',
-                      value: email.isEmpty ? '尚未提供電子信箱!' : email,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildInfoCard(
-                      icon: Icons.description,
-                      label: '簡介',
-                      value: description.isEmpty ? '尚未提供簡介!' : description,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildInfoCard(
-                      icon: Icons.login,
-                      label: '登入方式',
-                      value: provider,
-                    ),
-                    const SizedBox(height: 12),
-                    // 我的路線卡片
-                    Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.route),
-                        title: const Text('我的路線'),
-                        trailing: const Icon(Icons.chevron_right),
+                      const SizedBox(height: 32),
+                      _buildInfoCard(
+                        icon: Icons.person,
+                        label: '帳號',
+                        value: account,
+                      ),
+                      const SizedBox(height: 6),
+                      _buildInfoCard(
+                        icon: Icons.email,
+                        label: '電子信箱',
+                        value: email.isEmpty ? '尚未提供電子信箱!' : email,
+                      ),
+                      const SizedBox(height: 6),
+                      _buildInfoCard(
+                        icon: Icons.description,
+                        label: '簡介',
+                        value: description.isEmpty ? '尚未提供簡介!' : description,
+                      ),
+                      const SizedBox(height: 6),
+                      _buildInfoCard(
+                        icon: Icons.login,
+                        label: '登入方式',
+                        value: provider,
+                      ),
+                      const SizedBox(height: 6),
+                      _buildInfoCard(
+                        icon: Icons.route,
+                        label: '我的路線',
+                        value: '查看和管理您儲存的自行車路線',
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -226,34 +242,34 @@ class _UserProfilePageState extends State<UserProfilePage> {
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 32),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _isLoading ? null : _updateProfile,
-                            icon: const Icon(Icons.edit),
-                            label: const Text('編輯資料'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _isLoading ? null : _handleLogout,
-                            icon: const Icon(Icons.logout),
-                            label: const Text('登出'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: _isLoading ? null : _updateProfile,
+                              icon: const Icon(Icons.edit),
+                              label: const Text('編輯資料'),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: _isLoading ? null : _handleLogout,
+                              icon: const Icon(Icons.logout),
+                              label: const Text('登出'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         );
       },
@@ -261,81 +277,105 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Widget _buildFirebaseProfile(User user) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('個人資料'), elevation: 0),
-      body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.fromARGB(255, 161, 195, 221),
+            Color.fromARGB(255, 255, 255, 255),
+          ],
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('個人資料'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          final data = snapshot.data?.data();
-          final displayName =
-              (data?['name'] as String?)?.trim().isNotEmpty == true
-              ? data!['name'] as String
-              : (user.displayName?.isNotEmpty == true
-                    ? user.displayName!
-                    : '無名稱');
-          final account = (data?['account'] as String?) ?? (user.email ?? '');
-          final email = (data?['email'] as String?) ?? (user.email ?? '無郵箱');
-          final imageUrl =
-              (data?['imageUrl'] as String?)?.trim().isNotEmpty == true
-              ? data!['imageUrl'] as String
-              : (user.photoURL ?? '');
-          final provider =
-              (data?['provider'] as String?) ??
-              (user.providerData.isNotEmpty
-                  ? user.providerData.first.providerId
-                  : 'unknown');
+            final data = snapshot.data?.data();
+            final displayName =
+                (data?['name'] as String?)?.trim().isNotEmpty == true
+                ? data!['name'] as String
+                : (user.displayName?.isNotEmpty == true
+                      ? user.displayName!
+                      : '無名稱');
+            final account = (data?['account'] as String?) ?? (user.email ?? '');
+            final email = (data?['email'] as String?) ?? (user.email ?? '無郵箱');
+            final imageUrl =
+                (data?['imageUrl'] as String?)?.trim().isNotEmpty == true
+                ? data!['imageUrl'] as String
+                : (user.photoURL ?? '');
+            final provider =
+                (data?['provider'] as String?) ??
+                (user.providerData.isNotEmpty
+                    ? user.providerData.first.providerId
+                    : 'unknown');
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                Center(
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 60,
-                        backgroundImage: imageUrl.isNotEmpty
-                            ? NetworkImage(imageUrl)
-                            : null,
-                        child: imageUrl.isEmpty
-                            ? const Icon(Icons.person, size: 60)
-                            : null,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        displayName,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Center(
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 60,
+                          backgroundImage: imageUrl.isNotEmpty
+                              ? NetworkImage(imageUrl)
+                              : null,
+                          child: imageUrl.isEmpty
+                              ? const Icon(Icons.person, size: 60)
+                              : null,
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        Text(
+                          displayName,
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 32),
-                _buildInfoCard(icon: Icons.person, label: '帳號', value: account),
-                const SizedBox(height: 12),
-                _buildInfoCard(icon: Icons.email, label: 'Email', value: email),
-                const SizedBox(height: 12),
-                _buildInfoCard(
-                  icon: Icons.login,
-                  label: '登入方式',
-                  value: provider,
-                ),
-                const SizedBox(height: 12),
-                // 我的路線卡片
-                Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.route),
-                    title: const Text('我的路線'),
-                    trailing: const Icon(Icons.chevron_right),
+                  const SizedBox(height: 32),
+                  _buildInfoCard(
+                    icon: Icons.person,
+                    label: '帳號',
+                    value: account,
+                  ),
+                  const SizedBox(height: 6),
+                  _buildInfoCard(
+                    icon: Icons.email,
+                    label: 'Email',
+                    value: email,
+                  ),
+                  const SizedBox(height: 6),
+                  _buildInfoCard(
+                    icon: Icons.login,
+                    label: '登入方式',
+                    value: provider,
+                  ),
+                  const SizedBox(height: 6),
+                  _buildInfoCard(
+                    icon: Icons.route,
+                    label: '我的路線',
+                    value: '查看和管理您儲存的自行車路線',
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -343,34 +383,34 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 32),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _isLoading ? null : _updateProfile,
-                        icon: const Icon(Icons.edit),
-                        label: const Text('編輯資料'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _isLoading ? null : _handleLogout,
-                        icon: const Icon(Icons.logout),
-                        label: const Text('登出'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _isLoading ? null : _updateProfile,
+                          icon: const Icon(Icons.edit),
+                          label: const Text('編輯資料'),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        },
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _isLoading ? null : _handleLogout,
+                          icon: const Icon(Icons.logout),
+                          label: const Text('登出'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -379,12 +419,83 @@ class _UserProfilePageState extends State<UserProfilePage> {
     required IconData icon,
     required String label,
     required String value,
+    VoidCallback? onTap,
   }) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon),
-        title: Text(label),
-        subtitle: Text(value, maxLines: 2, overflow: TextOverflow.ellipsis),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [Color.fromARGB(255, 227, 226, 226), Color(0xFFFFFFFF)],
+          stops: [0.6, 1.0],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+        border: Border.all(
+          color: const Color.fromARGB(255, 247, 216, 16),
+          width: 0.7,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap, // 點擊事件
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, size: 30, color: const Color(0xFF2563EB)),
+                ),
+
+                const SizedBox(width: 14),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        value,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                if (onTap != null)
+                  const Icon(Icons.chevron_right, color: Colors.grey),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -102,162 +102,173 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: Color(0xFF1A1A2E),
-          ),
-          onPressed: () => Navigator.pop(context),
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color.fromARGB(255, 163, 205, 238), Color(0xFFF8FFFE)],
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 8),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
+      child: Scaffold(
+        backgroundColor: Colors.transparent, // 讓 Scaffold 背景透明，顯示底層的漸層
+        appBar: AppBar(
+          backgroundColor: Colors.transparent, //和scaffold一樣透明
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Color(0xFF1A1A2E),
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 8),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
 
-                // 標題
-                const Text(
-                  '建立帳號',
-                  style: TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1A1A2E),
-                    height: 1.1,
-                  ),
-                ),
-
-                const SizedBox(height: 36),
-
-                _buildField(
-                  controller: _nameController,
-                  label: '顯示名稱',
-                  icon: Icons.badge_outlined,
-                  hint: '你希望別人怎麼稱呼你',
-                  validator: (v) => (v == null || v.isEmpty) ? '請輸入名稱' : null,
-                ),
-                const SizedBox(height: 16),
-                _buildField(
-                  controller: _accountController,
-                  label: '帳號',
-                  icon: Icons.person_outline_rounded,
-                  hint: 'yourusername',
-                  keyboardType: TextInputType.text,
-                ),
-                const SizedBox(height: 16),
-                _buildField(
-                  controller: _passwordController,
-                  label: '密碼',
-                  icon: Icons.lock_outline_rounded,
-                  hint: '至少 6 個字元',
-                  isPassword: true,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return '請輸入密碼';
-                    if (v.length < 6) return '密碼至少需要 6 個字元';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildField(
-                  controller: _confirmPasswordController,
-                  label: '確認密碼',
-                  icon: Icons.lock_outline_rounded,
-                  hint: '再次輸入密碼',
-                  isPassword: true,
-                  errorText: _confirmError.isEmpty ? null : _confirmError,
-                  onChanged: (v) {
-                    setState(() {
-                      _confirmError = v != _passwordController.text
-                          ? '密碼不一致'
-                          : '';
-                    });
-                  },
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return '請再次輸入密碼';
-                    if (v != _passwordController.text) return '密碼不一致';
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 36),
-
-                // 註冊按鈕
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _register,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3B82F6),
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFF93C5FD),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+                  // 標題
+                  const Text(
+                    '建立帳號',
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1A1A2E),
+                      height: 1.1,
                     ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                  ),
+
+                  const SizedBox(height: 36),
+
+                  _buildField(
+                    controller: _nameController,
+                    label: '顯示名稱',
+                    icon: Icons.badge_outlined,
+                    hint: '你希望別人怎麼稱呼你',
+                    validator: (v) => (v == null || v.isEmpty) ? '請輸入名稱' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildField(
+                    controller: _accountController,
+                    label: '帳號',
+                    icon: Icons.person_outline_rounded,
+                    hint: 'yourusername',
+                    keyboardType: TextInputType.text,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildField(
+                    controller: _passwordController,
+                    label: '密碼',
+                    icon: Icons.lock_outline_rounded,
+                    hint: '至少 6 個字元',
+                    isPassword: true,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return '請輸入密碼';
+                      if (v.length < 6) return '密碼至少需要 6 個字元';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildField(
+                    controller: _confirmPasswordController,
+                    label: '確認密碼',
+                    icon: Icons.lock_outline_rounded,
+                    hint: '再次輸入密碼',
+                    isPassword: true,
+                    errorText: _confirmError.isEmpty ? null : _confirmError,
+                    onChanged: (v) {
+                      setState(() {
+                        _confirmError = v != _passwordController.text
+                            ? '密碼不一致'
+                            : '';
+                      });
+                    },
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return '請再次輸入密碼';
+                      if (v != _passwordController.text) return '密碼不一致';
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 36),
+
+                  // 註冊按鈕
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _register,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3B82F6),
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: const Color(0xFF93C5FD),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              '建立帳號',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          )
-                        : const Text(
-                            '建立帳號',
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // 返回登入
+                  Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          '已有帳號？',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF8A8FA8),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF3B82F6),
+                            padding: const EdgeInsets.only(left: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text(
+                            '返回登入',
                             style: TextStyle(
-                              fontSize: 15,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // 返回登入
-                Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        '已有帳號？',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF8A8FA8),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF3B82F6),
-                          padding: const EdgeInsets.only(left: 4),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: const Text(
-                          '返回登入',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -329,9 +340,9 @@ class _PasswordAwareFieldState extends State<_PasswordAwareField> {
         Text(
           widget.label,
           style: const TextStyle(
-            fontSize: 12,
+            fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF8A8FA8),
+            color: Color.fromARGB(255, 101, 106, 135),
             letterSpacing: 0.6,
           ),
         ),
@@ -345,12 +356,15 @@ class _PasswordAwareFieldState extends State<_PasswordAwareField> {
           style: const TextStyle(fontSize: 15, color: Color(0xFF1A1A2E)),
           decoration: InputDecoration(
             hintText: widget.hint,
-            hintStyle: const TextStyle(color: Color(0xFFCBD5E0), fontSize: 14),
+            hintStyle: const TextStyle(
+              color: Color.fromARGB(255, 130, 155, 183),
+              fontSize: 16,
+            ),
             errorText: widget.externalErrorText,
             prefixIcon: Icon(
               widget.icon,
               color: const Color(0xFFCBD5E0),
-              size: 20,
+              size: 30,
             ),
             suffixIcon: widget.isPassword
                 ? IconButton(

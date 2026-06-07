@@ -1,6 +1,10 @@
+//這個檔案包含了自定義的 AppBar，提供了搜尋功能和下拉刷新功能。當使用者點擊搜尋按鈕時，
+//會顯示一個輸入框和分類選擇，讓使用者可以輸入關鍵字並選擇搜尋類別。當使用者下拉 AppBar 時
+//，如果達到一定距離，會觸發刷新操作並顯示一個指示器。
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../pages/setting_page.dart';
+import 'dart:async';
 
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final LatLng? initialSearchCenter;
@@ -28,7 +32,7 @@ class _CustomAppBarState extends State<CustomAppBar>
   static const String _restaurantLabel = '餐廳';
   static const String _storeLabel = '超商';
   static const double _triggerDistance = 48.0;
-
+  Color _searchColor = Colors.white;
   bool _isSearching = false;
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
@@ -59,6 +63,15 @@ class _CustomAppBarState extends State<CustomAppBar>
       begin: const Offset(0.3, 0),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+    Timer.periodic(const Duration(milliseconds: 900), (timer) {
+      if (!_isSearching) return;
+
+      setState(() {
+        _searchColor = _searchColor == const Color(0xFF2563EB)
+            ? const Color(0xFF60A5FA)
+            : const Color(0xFF2563EB);
+      });
+    });
   }
 
   @override
@@ -97,7 +110,7 @@ class _CustomAppBarState extends State<CustomAppBar>
     _pullIndicatorEntry = null;
   }
 
-  // ── Category Overlay ──────────────────────────────────────
+  //顯示搜尋分類(景點、餐廳、超商)，當使用者點擊搜尋按鈕時會呼叫這個方法
 
   void _insertCategoryOverlay() {
     _removeCategoryOverlay();
@@ -193,7 +206,7 @@ class _CustomAppBarState extends State<CustomAppBar>
           children: [
             Icon(
               icon,
-              size: 18,
+              size: 24,
               color: isSelected ? Colors.white : const Color(0xFF111827),
             ),
             const SizedBox(width: 8),
@@ -215,23 +228,41 @@ class _CustomAppBarState extends State<CustomAppBar>
 
   void _openSearch() {
     setState(() => _isSearching = true);
+    Timer? _searchGlowTimer;
     _selectedSearchCategory = _scenicLabel;
     _insertCategoryOverlay();
     _animController.forward();
+
+    _searchGlowTimer?.cancel();
+    _searchGlowTimer = Timer.periodic(const Duration(milliseconds: 900), (_) {
+      if (!_isSearching) return;
+
+      setState(() {
+        _searchColor = _searchColor == const Color(0xFF2563EB)
+            ? const Color(0xFF60A5FA)
+            : const Color(0xFF2563EB);
+      });
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocusNode.requestFocus();
     });
   }
 
   void _closeSearch() {
-    _removeCategoryOverlay();
-    _animController.reverse().then((_) {
-      setState(() {
-        _isSearching = false;
-        _searchController.clear();
-        _selectedSearchCategory = _scenicLabel;
-      });
+    Timer? _searchGlowTimer;
+    _searchGlowTimer?.cancel();
+
+    setState(() {
+      _isSearching = false;
+      _searchController.clear();
+      _selectedSearchCategory = _scenicLabel;
+      _searchColor = const Color(0xFF2563EB);
     });
+
+    _removeCategoryOverlay();
+    _animController.reverse();
+
     _searchFocusNode.unfocus();
   }
 
@@ -305,40 +336,73 @@ class _CustomAppBarState extends State<CustomAppBar>
       onVerticalDragUpdate: _handlePullRefreshUpdate,
       onVerticalDragEnd: _handlePullRefreshEnd,
       child: AppBar(
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        backgroundColor: Colors.white.withValues(alpha: 0.92),
+
         title: _isSearching
             ? FadeTransition(
                 opacity: _fadeAnim,
                 child: SlideTransition(
                   position: _slideAnim,
-                  child: TextField(
-                    controller: _searchController,
-                    focusNode: _searchFocusNode,
-                    decoration: const InputDecoration(
-                      hintText: '輸入關鍵字後按 Enter',
-                      border: InputBorder.none,
-                      hintStyle: TextStyle(color: Colors.grey),
-                    ),
-                    style: const TextStyle(fontSize: 16),
-                    onSubmitted: (value) async {
-                      final keyword = value.trim();
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOut,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
 
-                      final selectedCategory = _selectedSearchCategory;
-                      _closeSearch();
-                      await widget.onSearchSubmitted?.call(
-                        keyword,
-                        selectedCategory,
-                      );
-                    },
+                      border: Border.all(
+                        color: _searchColor.withValues(alpha: 0.75),
+                        width: 1.6,
+                      ),
+
+                      boxShadow: [
+                        BoxShadow(
+                          color: _searchColor.withValues(alpha: 0.15),
+                          blurRadius: 18,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      focusNode: _searchFocusNode,
+                      decoration: const InputDecoration(
+                        hintText: '輸入關鍵字後按 Enter',
+                        border: InputBorder.none,
+                        hintStyle: TextStyle(color: Colors.grey),
+                      ),
+                      style: const TextStyle(fontSize: 16),
+
+                      onSubmitted: (value) async {
+                        final keyword = value.trim();
+                        final selectedCategory = _selectedSearchCategory;
+
+                        _closeSearch();
+
+                        await widget.onSearchSubmitted?.call(
+                          keyword,
+                          selectedCategory,
+                        );
+                      },
+                    ),
                   ),
                 ),
               )
-            : const Text('RideVoyage'),
+            : const Text(
+                'RideVoyage',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+
         leading: _isSearching
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: _closeSearch,
               )
             : null,
+
         actions: [
           if (!_isSearching) ...[
             IconButton(

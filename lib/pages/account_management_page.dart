@@ -155,89 +155,100 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final isEmailUser =
         user?.providerData.any((p) => p.providerId == 'password') ?? false;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('帳號管理')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // 帳號資訊
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.account_circle_outlined),
-              title: const Text('登入帳號'),
-              subtitle: Text(user?.email ?? '社群帳號登入'),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // 變更密碼（只有 email 登入才顯示）
-          if (isEmailUser) ...[
-            const Text(
-              '變更密碼',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
-            _PasswordField(
-              controller: _currentPasswordController,
-              label: '目前密碼',
-            ),
-            const SizedBox(height: 12),
-            _PasswordField(controller: _newPasswordController, label: '新密碼'),
-            const SizedBox(height: 12),
-            _PasswordField(
-              controller: _confirmPasswordController,
-              label: '確認新密碼',
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _handleChangePassword,
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('更新密碼'),
-              ),
-            ),
-            const Divider(height: 48),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.fromARGB(255, 161, 195, 221),
+            Color.fromARGB(255, 255, 255, 255),
           ],
-
-          // 刪除帳號
-          const Text(
-            '危險區域',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.red,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            '刪除帳號後，所有資料將無法復原。',
-            style: TextStyle(color: Colors.grey, fontSize: 13),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: _isLoading ? null : _handleDeleteAccount,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.red,
-                side: const BorderSide(color: Colors.red),
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('帳號管理'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            _glassCard(
+              child: ListTile(
+                leading: const Icon(Icons.account_circle_outlined),
+                title: const Text('登入帳號'),
+                subtitle: Text(user?.email ?? '社群帳號登入'),
               ),
-              child: const Text('刪除帳號'),
             ),
-          ),
-        ],
+
+            const SizedBox(height: 24),
+
+            if (isEmailUser) ...[
+              _sectionTitle('變更密碼'),
+
+              const SizedBox(height: 12),
+              _glassInput(
+                _PasswordField(
+                  controller: _currentPasswordController,
+                  label: '目前密碼',
+                ),
+              ),
+              const SizedBox(height: 12),
+              _glassInput(
+                _PasswordField(
+                  controller: _newPasswordController,
+                  label: '新密碼',
+                ),
+              ),
+              const SizedBox(height: 12),
+              _glassInput(
+                _PasswordField(
+                  controller: _confirmPasswordController,
+                  label: '確認新密碼',
+                ),
+              ),
+
+              const SizedBox(height: 16),
+              _glassButton(
+                text: _isLoading ? '更新中...' : '更新密碼',
+                onTap: _isLoading ? null : _handleChangePassword,
+              ),
+
+              const SizedBox(height: 24),
+            ],
+
+            _sectionTitle('危險區域', color: Colors.red),
+
+            const SizedBox(height: 8),
+            _glassCard(
+              child: const ListTile(
+                leading: Icon(Icons.warning_amber, color: Colors.red),
+                title: Text('刪除帳號', style: TextStyle(color: Colors.red)),
+                subtitle: Text(
+                  '刪除後資料無法復原',
+                  style: TextStyle(color: Colors.redAccent),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            _glassButton(
+              text: '刪除帳號',
+
+              onTap: _isLoading ? null : _handleDeleteAccount,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -275,4 +286,68 @@ class _PasswordFieldState extends State<_PasswordField> {
       ),
     );
   }
+}
+
+Widget _glassCard({required Widget child, Color? color}) {
+  return Container(
+    margin: const EdgeInsets.symmetric(vertical: 6),
+    decoration: BoxDecoration(
+      color: (color ?? Colors.white).withValues(alpha: 0.85),
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.06),
+          blurRadius: 18,
+          offset: const Offset(0, 8),
+        ),
+      ],
+      border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
+    ),
+    child: child,
+  );
+}
+
+Widget _glassInput(Widget child) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.7),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.8)),
+    ),
+    child: child,
+  );
+}
+
+Widget _glassButton({required String text, required VoidCallback? onTap}) {
+  return SizedBox(
+    width: double.infinity,
+    height: 48,
+    child: ElevatedButton(
+      onPressed: onTap,
+      style: ElevatedButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        elevation: 0,
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: Colors.red,
+        ),
+      ),
+    ),
+  );
+}
+
+Widget _sectionTitle(String text, {Color? color}) {
+  return Text(
+    text,
+    style: TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w700,
+      color: color ?? Colors.black87,
+    ),
+  );
 }

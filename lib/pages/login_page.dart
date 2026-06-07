@@ -202,104 +202,114 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 40),
-                const _LoginHeader(),
-                const SizedBox(height: 48),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color.fromARGB(255, 163, 205, 238), Color(0xFFF8FFFE)],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 40),
+                  const _LoginHeader(),
+                  const SizedBox(height: 48),
 
-                CustomTextField(
-                  label: '帳號',
-                  prefixIcon: Icons.mail_outline_rounded,
-                  controller: _accountController,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return '請輸入帳號';
+                  CustomTextField(
+                    label: '帳號',
+                    prefixIcon: Icons.mail_outline_rounded,
+                    controller: _accountController,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return '請輸入帳號';
 
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 20),
-
-                CustomTextField(
-                  label: '密碼',
-                  prefixIcon: Icons.lock_outline_rounded,
-                  controller: _passwordController,
-                  isPassword: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return '請輸入密碼';
-                    if (value.length < 6) return '密碼至少需要 6 個字元';
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 12),
-
-                const SizedBox(height: 32),
-
-                PrimaryButton(
-                  label: '登入',
-                  onPressed: _handleLogin,
-                  isLoading: _isLoading,
-                ),
-
-                const SizedBox(height: 28),
-                const _OrDivider(),
-                const SizedBox(height: 24),
-
-                Center(
-                  child: SocialLoginSection(
-                    onGooglePressed: _handleGoogleLogin,
+                      return null;
+                    },
                   ),
-                ),
 
-                const SizedBox(height: 32),
+                  const SizedBox(height: 20),
 
-                Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        '還沒有帳號？',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const RegisterPage(),
-                            ),
-                          );
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF3B82F6),
-                          padding: const EdgeInsets.only(left: 4),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: const Text(
-                          '立即註冊',
+                  CustomTextField(
+                    label: '密碼',
+                    prefixIcon: Icons.lock_outline_rounded,
+                    controller: _passwordController,
+                    isPassword: true,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return '請輸入密碼';
+                      if (value.length < 6) return '密碼至少需要 6 個字元';
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  const SizedBox(height: 32),
+
+                  PrimaryButton(
+                    label: '登入',
+                    onPressed: _handleLogin,
+                    isLoading: _isLoading,
+                  ),
+
+                  const SizedBox(height: 28),
+                  const _OrDivider(),
+                  const SizedBox(height: 24),
+
+                  Center(
+                    child: SocialLoginSection(
+                      onGooglePressed: _handleGoogleLogin,
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  Center(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          '還沒有帳號？',
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF6B7280),
                           ),
                         ),
-                      ),
-                    ],
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const RegisterPage(),
+                              ),
+                            );
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF3B82F6),
+                            padding: const EdgeInsets.only(left: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text(
+                            '立即註冊',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
