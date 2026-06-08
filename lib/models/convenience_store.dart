@@ -26,6 +26,8 @@ class ConvenienceStore implements MapPoint {
   final String telephone;
   final String? openTime;
   final String brand;
+  @override
+  String? get webUrl => null;
 
   // ── MapPoint 實作 ─────────────────────────────────────────
 

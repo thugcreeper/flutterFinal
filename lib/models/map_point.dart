@@ -9,4 +9,5 @@ abstract class MapPoint {
   String get city;
   String get typeLabel;
   double get markerHue;
+  String? get webUrl;
 }

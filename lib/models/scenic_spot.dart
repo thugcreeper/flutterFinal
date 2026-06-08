@@ -13,6 +13,7 @@ class ScenicSpot implements MapPoint {
   final double latitude;
   final double longitude;
   final String city;
+  final String? webUrl;
 
   @override
   double get markerHue => BitmapDescriptor.hueAzure;
@@ -29,6 +30,7 @@ class ScenicSpot implements MapPoint {
     required this.latitude,
     required this.longitude,
     required this.city,
+    this.webUrl,
   });
 
   factory ScenicSpot.fromJson(Map<String, dynamic> json) {
@@ -44,6 +46,7 @@ class ScenicSpot implements MapPoint {
       latitude: (position['PositionLat'] as num?)?.toDouble() ?? 0.0,
       longitude: (position['PositionLon'] as num?)?.toDouble() ?? 0.0,
       city: json['City']?.toString() ?? '',
+      webUrl: json['WebsiteUrl']?.toString(),
     );
   }
 }

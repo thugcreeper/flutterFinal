@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'error_snack_bar.dart';
-
+import 'package:url_launcher/url_launcher.dart';
 import '../models/map_point.dart';
 import '../models/restaurant.dart';
+import 'result_card.dart';
 
 /// 顯示首頁上的附近搜尋結果清單。
 class NearbySearchResultsPanel extends StatelessWidget {
@@ -151,119 +151,6 @@ class NearbySearchResultsPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildResultCard(BuildContext context, MapPoint point) {
-    final subtitle = point is Restaurant
-        ? point.address.isNotEmpty
-              ? point.address
-              : point.description
-        : point.description;
-
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => onTapPoint(point),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: point.pictureUrl.isNotEmpty
-                        ? Image.network(
-                            point.pictureUrl,
-                            width: 60,
-                            height: 60,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                _buildLeadingAvatar(point),
-                          )
-                        : _buildLeadingAvatar(point),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          point.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          subtitle.isNotEmpty ? subtitle : point.city,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: [
-                            _TypeChip(
-                              label: point.typeLabel,
-                              color: point.typeLabel == '餐廳'
-                                  ? const Color(0xFFEF4444)
-                                  : const Color(0xFF3B82F6),
-                            ),
-                            if (point.city.isNotEmpty)
-                              const _TypeChip(
-                                label: '城市',
-                                color: Color(0xFF64748B),
-                              ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: () async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    try {
-                      await onAddToRoute(point);
-                    } catch (e) {
-                      messenger.showSnackBar(
-                        ErrorSnackBar(message: '接到路線發生錯誤：$e'),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.route_outlined),
-                  label: const Text('接到路線'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLeadingAvatar(MapPoint point) {
-    return Container(
-      width: 60,
-      height: 60,
-      color: Colors.grey.shade200,
-      child: Icon(
-        point.typeLabel == '餐廳' ? Icons.restaurant : Icons.location_on,
-        color: Colors.grey.shade600,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final controller = sheetController;
@@ -351,7 +238,11 @@ class NearbySearchResultsPanel extends StatelessWidget {
                         separatorBuilder: (context, index) =>
                             const SizedBox(height: 2),
                         itemBuilder: (context, index) {
-                          return _buildResultCard(context, results[index]);
+                          return ResultCard(
+                            point: results[index],
+                            onTap: () => onTapPoint(results[index]),
+                            onAddToRoute: onAddToRoute,
+                          );
                         },
                       );
                     },
