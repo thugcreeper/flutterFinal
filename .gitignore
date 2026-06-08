@@ -49,3 +49,4 @@ app.*.map.json
 
 /暫存
 /logs
+android/app/src/main/res/values/strings.xml

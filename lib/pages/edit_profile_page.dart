@@ -133,13 +133,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (_cloudinaryCloudName.isEmpty || _cloudinaryUploadPreset.isEmpty) {
       throw Exception('Cloudinary 環境變數未設定完整');
     }
-
+    final int timestamp = DateTime.now().millisecondsSinceEpoch;
     final uri = Uri.parse(
       'https://api.cloudinary.com/v1_1/$_cloudinaryCloudName/image/upload',
     );
     final request = http.MultipartRequest('POST', uri)
       ..fields['upload_preset'] = _cloudinaryUploadPreset
-      ..fields['public_id'] = 'avatars/$id'
+      ..fields['public_id'] = 'avatars/{$id}_$timestamp'
       ..files.add(await http.MultipartFile.fromPath('file', file.path));
 
     final response = await request.send();
@@ -153,6 +153,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final decoded = Map<String, dynamic>.from(
       jsonDecode(data) as Map<String, dynamic>,
     );
+
     final secureUrl = decoded['secure_url']?.toString();
     if (secureUrl == null || secureUrl.isEmpty) {
       throw Exception('Cloudinary 未回傳圖片網址');

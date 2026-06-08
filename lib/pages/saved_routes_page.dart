@@ -101,7 +101,7 @@ class _SavedRoutesPageState extends State<SavedRoutesPage> {
   }
 }
 
-/// 單一路線的 ListTile，包含基本資訊、刪除按鈕，以及可選取模式。
+/// 單一路線的 ListTile，包含基本資訊、刪除按鈕
 class _RouteListTile extends StatelessWidget {
   const _RouteListTile({
     required this.route,
@@ -148,22 +148,43 @@ class _RouteListTile extends StatelessWidget {
     final date =
         '${route.createdAt.year}/${route.createdAt.month.toString().padLeft(2, '0')}/${route.createdAt.day.toString().padLeft(2, '0')}';
 
-    return ListTile(
-      leading: const Icon(Icons.route),
-      title: Text(route.routeName),
-      subtitle: Text(
-        '$date  ·  ${route.distance}  ·  ${route.duration}\n'
-        '爬升 ${route.totalAscent.toStringAsFixed(0)} m  ·  下降 ${route.totalDescent.toStringAsFixed(0)} m',
+    return Dismissible(
+      // key 必須是唯一的，這裡用 route.id
+      key: Key(route.id),
+      // 設定只允許從右往左拉（出現右側的垃圾桶）
+      direction: DismissDirection.endToStart,
+      // 觸發滑動時彈出確認對話框，回傳 true 才會真正觸發滑動消失動畫
+      confirmDismiss: (direction) async {
+        await _delete(context);
+        // 因為 _delete 內部已經處理了 API 刪除，不論成功或失敗，
+        // 這裡都回傳 false，讓 StreamBuilder 重新整理資料來控制 UI 的消失，避免與滑動動畫衝突
+        return false;
+      },
+      // 滑動時顯現的背景（垃圾桶圖案）
+      background: Container(
+        color: Colors.redAccent,
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
       ),
-      isThreeLine: true,
-      onTap: selectable ? onSelect : null,
-      trailing: selectable
-          ? const Icon(Icons.arrow_forward_ios, size: 16)
-          : IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-              tooltip: '刪除路線',
-              onPressed: () => _delete(context),
-            ),
+      child: ListTile(
+        leading: const Icon(Icons.route),
+        title: Text(route.routeName),
+        subtitle: Text(
+          '$date  ·  ${route.distance}  ·  ${route.duration}\n'
+          '爬升 ${route.totalAscent.toStringAsFixed(0)} m  ·  下降 ${route.totalDescent.toStringAsFixed(0)} m',
+        ),
+        isThreeLine: true,
+        onTap: selectable ? onSelect : null,
+        // 如果是 selectable 模式就顯示箭頭，否則顯示提示使用者可以滑動刪除的圖標（或保留清除）
+        trailing: selectable
+            ? const Icon(Icons.arrow_forward_ios, size: 16)
+            : const Icon(
+                Icons.drag_handle,
+                color: Colors.grey,
+                size: 20,
+              ), // 提示可拖曳/滑動
+      ),
     );
   }
 }

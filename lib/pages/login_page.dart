@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
@@ -38,15 +39,24 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _syncFirebaseUserProfile(User user) async {
     final docRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    // 先讀取現有資料
+    final existing = await docRef.get();
+    final existingImageUrl = existing.data()?['imageUrl'] ?? '';
+    final existingName = existing.data()?['name'] ?? '';
     final payload = {
       'uid': user.uid,
       'account': user.email ?? '',
-      'name': user.displayName ?? '',
+      'name': existingName.isNotEmpty
+          ? existingName
+          : (user.displayName ?? '未知使用者'),
       'email': user.email ?? '',
-      'imageUrl': user.photoURL ?? '',
+      // 只有當 Firestore 沒有自訂頭像時才用 Google 的
+      'imageUrl': existingImageUrl.isNotEmpty
+          ? existingImageUrl
+          : (user.photoURL ?? ''),
       'provider': user.providerData.isNotEmpty
           ? user.providerData.first.providerId
-          : 'google.com',
+          : 'unknown',
       'updatedAt': FieldValue.serverTimestamp(),
     };
     await docRef.set({
@@ -199,6 +209,120 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _handleFacebookLogin() async {
+    setState(() => _isLoading = true);
+
+    try {
+      // 1. 透過 flutter_facebook_auth 觸發原生 Facebook 登入並請求權限
+      final LoginResult loginResult = await FacebookAuth.instance.login(
+        permissions: ['public_profile', 'email'],
+      );
+
+      // 檢查登入狀態
+      if (loginResult.status != LoginStatus.success) {
+        setState(() => _isLoading = false);
+        // 如果使用者只是點選取消，就直接返回，不做錯誤提示
+        if (loginResult.status == LoginStatus.cancelled) return;
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            ErrorSnackBar(
+              message: 'Facebook 授權失敗：${loginResult.message}',
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+
+      final AccessToken? fbToken = loginResult.accessToken;
+      if (fbToken == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // 2. 使用 Facebook 的 AccessToken 建立 Firebase 的 OAuth 憑證並登入 Firebase
+      final OAuthCredential credential = FacebookAuthProvider.credential(
+        fbToken.tokenString,
+      );
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(
+        credential,
+      );
+      final user = userCredential.user;
+
+      if (user != null) {
+        // 3. 【關鍵步驟】取得 Firebase 的 idToken 送給 FastAPI 後端驗證
+        final String? firebaseIdToken = await user.getIdToken();
+        if (firebaseIdToken == null) {
+          throw Exception("無法取得 Firebase idToken");
+        }
+
+        // 4. 呼叫自建後端 API 換取後端的 accessToken
+        final apiService = ApiService();
+        final backendResult = await apiService.facebookLogin(firebaseIdToken);
+
+        if (backendResult['ok'] != true) {
+          // 如果後端驗證失敗，要把 Firebase 登出，維持前後端狀態一致
+          await FirebaseAuth.instance.signOut();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              ErrorSnackBar(
+                message: backendResult['message'] ?? '後端 Facebook 驗證失敗',
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+          return;
+        }
+
+        // 5. 同步 Firestore 使用者資料，並清除自建帳密登入專用的 backendUserId
+        await _syncFirebaseUserProfile(user);
+        await _storage.delete(key: 'backendUserId');
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SuccessSnackBar(
+              message: 'Facebook 登入成功！',
+              duration: Duration(seconds: 2),
+            ),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginSuccessPage()),
+          );
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        final message = switch (e.code) {
+          'account-exists-with-different-credential' =>
+            '此 Email 已被其他登入方式（如 Google）註冊，請使用原方式登入。',
+          'invalid-credential' => 'Facebook 登入憑證無效或已過期。',
+          'user-disabled' => '此帳號已被停用。',
+          'operation-not-allowed' => 'Facebook 登入尚未在 Firebase 啟用。',
+          _ => 'Firebase 錯誤 (${e.code}): ${e.message}',
+        };
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          ErrorSnackBar(message: message, duration: const Duration(seconds: 3)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          ErrorSnackBar(
+            message: '發生未知錯誤：$e',
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -266,6 +390,7 @@ class _LoginPageState extends State<LoginPage> {
                   Center(
                     child: SocialLoginSection(
                       onGooglePressed: _handleGoogleLogin,
+                      onFacebookPressed: _handleFacebookLogin,
                     ),
                   ),
 

@@ -165,4 +165,43 @@ class ApiService {
       return _failed('Google 登入失敗，請稍後再試');
     }
   }
+
+  // Facebook 登入API
+  Future<Map<String, dynamic>> facebookLogin(String fbAccessToken) async {
+    final baseUrl = _baseUrlOrNull;
+    if (baseUrl == null) {
+      return _failed('環境變數 API_BASE_URL 未設定');
+    }
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/facebooklogin'),
+            headers: <String, String>{
+              'Content-Type': 'application/json; charset=UTF-8',
+            },
+            body: jsonEncode(<String, String>{'idToken': fbAccessToken}),
+          )
+          .timeout(_requestTimeout);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        await _storage.write(
+          key: 'idToken',
+          value: data['idToken']?.toString() ?? '',
+        );
+        return <String, dynamic>{'ok': true, ...data};
+      }
+
+      return _failed(
+        'Facebook 登入失敗 (${response.statusCode})',
+        statusCode: response.statusCode,
+        body: response.body,
+      );
+    } on TimeoutException {
+      return _failed('Facebook 登入請求逾時，請稍後再試');
+    } catch (_) {
+      return _failed('Facebook 登入失敗，請稍後再試');
+    }
+  }
 }

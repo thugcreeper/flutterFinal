@@ -277,6 +277,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Widget _buildFirebaseProfile(User user) {
+    String? userPhoto;
+    for (final profile in user.providerData) {
+      if (profile.providerId == 'facebook.com') {
+        userPhoto = profile.photoURL;
+        break;
+      }
+    }
+    userPhoto ??= user.photoURL;
+
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -308,18 +317,32 @@ class _UserProfilePageState extends State<UserProfilePage> {
             }
 
             final data = snapshot.data?.data();
-            final displayName =
-                (data?['name'] as String?)?.trim().isNotEmpty == true
-                ? data!['name'] as String
-                : (user.displayName?.isNotEmpty == true
-                      ? user.displayName!
-                      : '無名稱');
+            String displayName = '無名稱';
+
+            if (data?['name'] != null &&
+                (data!['name'] as String).trim().isNotEmpty) {
+              // 優先使用 Firestore 資料庫裡的名字
+              displayName = data['name'] as String;
+            } else if (user.displayName != null &&
+                user.displayName!.isNotEmpty) {
+              // 次之使用第三方登入（Google/FB）帶過來的名字
+              displayName = user.displayName!;
+            }
             final account = (data?['account'] as String?) ?? (user.email ?? '');
             final email = (data?['email'] as String?) ?? (user.email ?? '無郵箱');
-            final imageUrl =
-                (data?['imageUrl'] as String?)?.trim().isNotEmpty == true
-                ? data!['imageUrl'] as String
-                : (user.photoURL ?? '');
+            final description = (data?['description'] as String?) ?? '尚未提供簡介';
+            String imageUrl = '';
+            if (data?['imageUrl'] != null &&
+                (data!['imageUrl'] as String).trim().isNotEmpty) {
+              imageUrl = data['imageUrl'] as String;
+            } else if (userPhoto != null && userPhoto.isNotEmpty) {
+              // 沒有才用第三方登入的頭像
+              imageUrl = userPhoto;
+            }
+            if (imageUrl.contains("graph.facebook.com") &&
+                !imageUrl.contains("?")) {
+              imageUrl = "$imageUrl?type=large";
+            }
             final provider =
                 (data?['provider'] as String?) ??
                 (user.providerData.isNotEmpty
@@ -364,6 +387,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     icon: Icons.email,
                     label: 'Email',
                     value: email,
+                  ),
+                  const SizedBox(height: 6),
+                  _buildInfoCard(
+                    icon: Icons.description,
+                    label: '個人介紹',
+                    value: description ?? '暫無介紹',
                   ),
                   const SizedBox(height: 6),
                   _buildInfoCard(

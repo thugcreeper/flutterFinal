@@ -125,10 +125,10 @@ class ScenicSpotService {
 
   /// 依城市取得景點
   /// [city] 城市名稱，例如 'Taipei'
-  /// [top] 最多回傳幾筆，預設 30
+  /// [top] 最多回傳幾筆
   Future<List<ScenicSpot>> getScenicSpotsByCity({
     required String city,
-    int top = 30,
+    int top = 300,
   }) async {
     final token = await _getToken();
     if (token == null || token.isEmpty) {

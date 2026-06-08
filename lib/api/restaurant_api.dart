@@ -118,7 +118,7 @@ class RestaurantService {
   /// 依城市取得餐廳
   Future<List<Restaurant>> getRestaurantsByCity({
     required String city,
-    int top = 30,
+    int top = 300,
   }) async {
     final token = await _getToken();
     if (token == null || token.isEmpty) {

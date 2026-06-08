@@ -73,7 +73,6 @@ class TourismSearchService {
   }) async {
     final scenicSpots = await _scenicSpotService.getScenicSpotsByCity(
       city: city,
-      top: top,
     );
 
     return _sortByDistance(
@@ -104,7 +103,6 @@ class TourismSearchService {
   }) async {
     final restaurants = await _restaurantService.getRestaurantsByCity(
       city: city,
-      top: top,
     );
 
     return _sortByDistance(

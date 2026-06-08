@@ -6,11 +6,13 @@ class SocialLoginSection extends StatelessWidget {
   const SocialLoginSection({
     super.key,
     this.onGooglePressed,
+    this.onFacebookPressed,
     this.buttonWidth = double.infinity,
     this.buttonHeight = 50,
   });
 
   final VoidCallback? onGooglePressed;
+  final VoidCallback? onFacebookPressed;
   final double buttonWidth;
   final double buttonHeight;
 
@@ -30,6 +32,11 @@ class SocialLoginSection extends StatelessWidget {
   // ── Facebook ─────────────────────────────────────────────
   Future<void> _loginWithFacebook(BuildContext context) async {
     // TODO: 待 Meta 開發者後台設定完成後實作
+    if (onFacebookPressed != null) {
+      onFacebookPressed!();
+      return;
+    }
+
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Facebook 登入尚未開放')));
