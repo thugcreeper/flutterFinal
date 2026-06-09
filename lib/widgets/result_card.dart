@@ -98,14 +98,19 @@ class ResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
+        side: BorderSide(
+          color: isDarkMode
+              ? Color.fromARGB(137, 25, 32, 37)
+              : Colors.grey.shade200,
+        ),
       ),
-      color: Colors.white,
+      color: isDarkMode ? Color(0xFF1E293B) : Colors.white,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
@@ -128,10 +133,12 @@ class ResultCard extends StatelessWidget {
                           point.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF111827),
+                            color: isDarkMode
+                                ? Colors.white
+                                : Color(0xFF111827),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -142,7 +149,9 @@ class ResultCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 18,
-                            color: Colors.grey.shade600,
+                            color: isDarkMode
+                                ? Colors.white
+                                : Colors.grey.shade600,
                             height: 1.4,
                           ),
                         ),
@@ -171,69 +180,68 @@ class ResultCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              const Divider(height: 1),
+              Divider(
+                height: 1,
+                color: isDarkMode ? Color(0xFF374151) : Colors.grey.shade200,
+              ),
               const SizedBox(height: 4),
               // 按鈕列
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   //查看詳細介紹按鈕
-                  Expanded(
-                    child: TextButton.icon(
-                      style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFF3B82F6),
-                        textStyle: const TextStyle(fontSize: 16),
-                      ),
-                      onPressed: () => PointDetailDialog.show(context, point),
-                      icon: const Icon(Icons.article_outlined, size: 18),
-                      label: const Text('詳細介紹'),
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF3B82F6),
+                      textStyle: const TextStyle(fontSize: 16),
                     ),
+                    onPressed: () => PointDetailDialog.show(context, point),
+                    icon: const Icon(Icons.article_outlined, size: 18),
+                    label: const Text('介紹'),
                   ),
+
                   //前往網頁按鈕（如果有的話）
                   if (point.webUrl != null && point.webUrl!.isNotEmpty)
-                    Expanded(
-                      child: TextButton.icon(
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF3B82F6),
-                          textStyle: const TextStyle(fontSize: 16),
-                        ),
-                        onPressed: () async {
-                          final uri = Uri.tryParse(point.webUrl!);
-                          if (uri == null) return;
-                          if (await canLaunchUrl(uri)) {
-                            await launchUrl(
-                              uri,
-                              mode: LaunchMode.externalApplication,
-                            );
-                          }
-                        },
-                        icon: const Icon(
-                          Icons.open_in_browser_outlined,
-                          size: 20,
-                        ),
-                        label: const Text('前往網頁'),
-                      ),
-                    ),
-                  //接到路線按鈕
-                  Expanded(
-                    child: TextButton.icon(
+                    TextButton.icon(
                       style: TextButton.styleFrom(
                         foregroundColor: const Color(0xFF3B82F6),
                         textStyle: const TextStyle(fontSize: 16),
                       ),
                       onPressed: () async {
-                        final messenger = ScaffoldMessenger.of(context);
-                        try {
-                          await onAddToRoute(point);
-                        } catch (e) {
-                          messenger.showSnackBar(
-                            ErrorSnackBar(message: '接到路線發生錯誤：$e'),
+                        final uri = Uri.tryParse(point.webUrl!);
+                        if (uri == null) return;
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
                           );
                         }
                       },
-                      icon: const Icon(Icons.route_outlined, size: 18),
-                      label: const Text('接到路線'),
+                      icon: const Icon(
+                        Icons.open_in_browser_outlined,
+                        size: 20,
+                      ),
+                      label: const Text('網站'),
                     ),
+
+                  //接到路線按鈕
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF3B82F6),
+                      textStyle: const TextStyle(fontSize: 16),
+                    ),
+                    onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      try {
+                        await onAddToRoute(point);
+                      } catch (e) {
+                        messenger.showSnackBar(
+                          ErrorSnackBar(message: '接到路線發生錯誤：$e'),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.route_outlined, size: 18),
+                    label: const Text('接到路線'),
                   ),
                 ],
               ),

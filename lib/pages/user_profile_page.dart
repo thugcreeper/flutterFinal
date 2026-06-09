@@ -7,6 +7,8 @@ import 'login_page.dart';
 import 'edit_profile_page.dart';
 import 'saved_routes_page.dart';
 import '../widgets/error_snack_bar.dart';
+import '../widgets/user_profile_dialog.dart';
+import '../widgets/gradient_scaffold.dart';
 
 //使用者資料頁面，用firebase_auth取得使用者資料
 class UserProfilePage extends StatefulWidget {
@@ -25,6 +27,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
   void initState() {
     super.initState();
     _currentUser = FirebaseAuth.instance.currentUser;
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   Future<void> _handleLogout() async {
@@ -114,7 +121,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
       future: _storage.read(key: 'backendUserId'),
       builder: (context, idSnapshot) {
         if (idSnapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
+          return GradientScaffold(
             appBar: AppBar(title: const Text('個人資料'), elevation: 0),
             body: const Center(child: CircularProgressIndicator()),
           );
@@ -122,7 +129,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
         final backendUserId = idSnapshot.data;
         if (backendUserId == null || backendUserId.isEmpty) {
-          return Scaffold(
+          return GradientScaffold(
             appBar: AppBar(title: const Text('個人資料'), elevation: 0),
             body: Center(
               child: ElevatedButton(
@@ -136,140 +143,141 @@ class _UserProfilePageState extends State<UserProfilePage> {
           );
         }
 
-        return Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color.fromARGB(255, 161, 195, 221),
-                Color.fromARGB(255, 255, 255, 255),
-              ],
-            ),
-          ),
-          child: Scaffold(
+        return GradientScaffold(
+          appBar: AppBar(
+            title: const Text('個人資料'),
             backgroundColor: Colors.transparent,
-            appBar: AppBar(
-              title: const Text('個人資料'),
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-            ),
-            body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(backendUserId)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+            elevation: 0,
+          ),
+          body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .doc(backendUserId)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-                final data = snapshot.data?.data();
-                if (data == null) {
-                  return const Center(child: Text('找不到使用者資料'));
-                }
+              final data = snapshot.data?.data();
+              if (data == null) {
+                return const Center(child: Text('找不到使用者資料'));
+              }
 
-                final name = (data['name'] ?? '').toString();
-                final account = (data['account'] ?? '').toString();
-                final email = (data['email'] ?? '').toString();
-                final description = (data['description'] ?? '').toString();
-                final imageUrl = (data['imageUrl'] ?? '').toString();
-                final provider = (data['provider'] ?? 'local').toString();
+              final name = (data['name'] ?? '').toString();
+              final account = (data['account'] ?? '').toString();
+              final email = (data['email'] ?? '').toString();
+              final description = (data['description'] ?? '').toString();
+              final imageUrl = (data['imageUrl'] ?? '').toString();
+              final provider = (data['provider'] ?? 'local').toString();
 
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      Center(
-                        child: Column(
-                          children: [
-                            CircleAvatar(
-                              radius: 60,
-                              backgroundImage: imageUrl.isNotEmpty
-                                  ? NetworkImage(imageUrl)
-                                  : null,
-                              child: imageUrl.isEmpty
-                                  ? const Icon(Icons.person, size: 60)
-                                  : null,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              name.isEmpty ? '無名稱' : name,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      _buildInfoCard(
-                        icon: Icons.person,
-                        label: '帳號',
-                        value: account,
-                      ),
-                      const SizedBox(height: 6),
-                      _buildInfoCard(
-                        icon: Icons.email,
-                        label: '電子信箱',
-                        value: email.isEmpty ? '尚未提供電子信箱!' : email,
-                      ),
-                      const SizedBox(height: 6),
-                      _buildInfoCard(
-                        icon: Icons.description,
-                        label: '簡介',
-                        value: description.isEmpty ? '尚未提供簡介!' : description,
-                      ),
-                      const SizedBox(height: 6),
-                      _buildInfoCard(
-                        icon: Icons.login,
-                        label: '登入方式',
-                        value: provider,
-                      ),
-                      const SizedBox(height: 6),
-                      _buildInfoCard(
-                        icon: Icons.route,
-                        label: '我的路線',
-                        value: '查看和管理您儲存的自行車路線',
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                const SavedRoutesPage(selectable: true),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Center(
+                      child: Column(
                         children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _isLoading ? null : _updateProfile,
-                              icon: const Icon(Icons.edit),
-                              label: const Text('編輯資料'),
-                            ),
+                          CircleAvatar(
+                            radius: 60,
+                            backgroundImage: imageUrl.isNotEmpty
+                                ? NetworkImage(imageUrl)
+                                : null,
+                            child: imageUrl.isEmpty
+                                ? const Icon(Icons.person, size: 60)
+                                : null,
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _isLoading ? null : _handleLogout,
-                              icon: const Icon(Icons.logout),
-                              label: const Text('登出'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                              ),
+                          const SizedBox(height: 16),
+                          Text(
+                            name.isEmpty ? '無名稱' : name,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                    ),
+                    const SizedBox(height: 32),
+                    _buildInfoCard(
+                      leadingColor: Color(0xFF3B82F6),
+                      icon: Icons.person,
+                      label: '帳號',
+                      value: account,
+                    ),
+                    const SizedBox(height: 6),
+                    _buildInfoCard(
+                      leadingColor: Color(0xFFE15B74),
+                      icon: Icons.email,
+                      label: 'Email',
+                      value: email,
+                    ),
+                    const SizedBox(height: 6),
+                    _buildInfoCard(
+                      leadingColor: Color(0xFF10B981),
+                      icon: Icons.description,
+                      label: '個人介紹',
+                      value: description,
+                      trailingIcon: const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 20,
+                      ),
+                      onTap: () {
+                        showDescriptionDialog(context, description);
+                      },
+                    ),
+                    const SizedBox(height: 6),
+                    _buildInfoCard(
+                      leadingColor: Color(0xFFF59E0B),
+                      icon: Icons.login,
+                      label: '登入方式',
+                      value: provider,
+                    ),
+                    const SizedBox(height: 6),
+                    _buildInfoCard(
+                      leadingColor: Color(0xFF8B5CF6),
+                      icon: Icons.route,
+                      label: '我的路線',
+                      value: '查看和管理您儲存的自行車路線',
+                      trailingIcon: const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 20,
+                      ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const SavedRoutesPage(selectable: true),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _isLoading ? null : _updateProfile,
+                            icon: const Icon(Icons.edit),
+                            label: const Text('編輯資料'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _isLoading ? null : _handleLogout,
+                            icon: const Icon(Icons.logout),
+                            label: const Text('登出'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         );
       },
@@ -286,242 +294,292 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
     userPhoto ??= user.photoURL;
 
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color.fromARGB(255, 161, 195, 221),
-            Color.fromARGB(255, 255, 255, 255),
-          ],
-        ),
-      ),
-      child: Scaffold(
+    return GradientScaffold(
+      appBar: AppBar(
+        title: const Text('個人資料'),
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('個人資料'),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-        ),
-        body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
+        elevation: 0,
+      ),
+      body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            final data = snapshot.data?.data();
-            String displayName = '無名稱';
+          final data = snapshot.data?.data();
+          String displayName = '無名稱';
 
-            if (data?['name'] != null &&
-                (data!['name'] as String).trim().isNotEmpty) {
-              // 優先使用 Firestore 資料庫裡的名字
-              displayName = data['name'] as String;
-            } else if (user.displayName != null &&
-                user.displayName!.isNotEmpty) {
-              // 次之使用第三方登入（Google/FB）帶過來的名字
-              displayName = user.displayName!;
-            }
-            final account = (data?['account'] as String?) ?? (user.email ?? '');
-            final email = (data?['email'] as String?) ?? (user.email ?? '無郵箱');
-            final description = (data?['description'] as String?) ?? '尚未提供簡介';
-            String imageUrl = '';
-            if (data?['imageUrl'] != null &&
-                (data!['imageUrl'] as String).trim().isNotEmpty) {
-              imageUrl = data['imageUrl'] as String;
-            } else if (userPhoto != null && userPhoto.isNotEmpty) {
-              // 沒有才用第三方登入的頭像
-              imageUrl = userPhoto;
-            }
-            if (imageUrl.contains("graph.facebook.com") &&
-                !imageUrl.contains("?")) {
-              imageUrl = "$imageUrl?type=large";
-            }
-            final provider =
-                (data?['provider'] as String?) ??
-                (user.providerData.isNotEmpty
-                    ? user.providerData.first.providerId
-                    : 'unknown');
+          if (data?['name'] != null &&
+              (data!['name'] as String).trim().isNotEmpty) {
+            // 優先使用 Firestore 資料庫裡的名字
+            displayName = data['name'] as String;
+          } else if (user.displayName != null && user.displayName!.isNotEmpty) {
+            // 次之使用第三方登入（Google/FB）帶過來的名字
+            displayName = user.displayName!;
+          }
+          final account = (data?['account'] as String?) ?? (user.email ?? '');
+          final email = (data?['email'] as String?) ?? (user.email ?? '無郵箱');
+          final description = (data?['description'] as String?) ?? '尚未提供簡介';
+          String imageUrl = '';
+          if (data?['imageUrl'] != null &&
+              (data!['imageUrl'] as String).trim().isNotEmpty) {
+            imageUrl = data['imageUrl'] as String;
+          } else if (userPhoto != null && userPhoto.isNotEmpty) {
+            // 沒有才用第三方登入的頭像
+            imageUrl = userPhoto;
+          }
+          if (imageUrl.contains("graph.facebook.com") &&
+              !imageUrl.contains("?")) {
+            imageUrl = "$imageUrl?type=large";
+          }
+          final provider =
+              (data?['provider'] as String?) ??
+              (user.providerData.isNotEmpty
+                  ? user.providerData.first.providerId
+                  : 'unknown');
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Center(
-                    child: Column(
-                      children: [
-                        CircleAvatar(
-                          radius: 60,
-                          backgroundImage: imageUrl.isNotEmpty
-                              ? NetworkImage(imageUrl)
-                              : null,
-                          child: imageUrl.isEmpty
-                              ? const Icon(Icons.person, size: 60)
-                              : null,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          displayName,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  _buildInfoCard(
-                    icon: Icons.person,
-                    label: '帳號',
-                    value: account,
-                  ),
-                  const SizedBox(height: 6),
-                  _buildInfoCard(
-                    icon: Icons.email,
-                    label: 'Email',
-                    value: email,
-                  ),
-                  const SizedBox(height: 6),
-                  _buildInfoCard(
-                    icon: Icons.description,
-                    label: '個人介紹',
-                    value: description ?? '暫無介紹',
-                  ),
-                  const SizedBox(height: 6),
-                  _buildInfoCard(
-                    icon: Icons.login,
-                    label: '登入方式',
-                    value: provider,
-                  ),
-                  const SizedBox(height: 6),
-                  _buildInfoCard(
-                    icon: Icons.route,
-                    label: '我的路線',
-                    value: '查看和管理您儲存的自行車路線',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const SavedRoutesPage(selectable: true),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                Center(
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _isLoading ? null : _updateProfile,
-                          icon: const Icon(Icons.edit),
-                          label: const Text('編輯資料'),
-                        ),
+                      CircleAvatar(
+                        radius: 60,
+                        backgroundImage: imageUrl.isNotEmpty
+                            ? NetworkImage(imageUrl)
+                            : null,
+                        child: imageUrl.isEmpty
+                            ? const Icon(Icons.person, size: 60)
+                            : null,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _isLoading ? null : _handleLogout,
-                          icon: const Icon(Icons.logout),
-                          label: const Text('登出'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                          ),
+                      const SizedBox(height: 16),
+                      Text(
+                        displayName,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-            );
-          },
-        ),
+                ),
+                const SizedBox(height: 32),
+                _buildInfoCard(
+                  leadingColor: Color(0xFF3B82F6),
+                  icon: Icons.person,
+                  label: '帳號',
+                  value: account,
+                ),
+                const SizedBox(height: 6),
+                _buildInfoCard(
+                  leadingColor: Color(0xFFE15B74),
+                  icon: Icons.email,
+                  label: 'Email',
+                  value: email,
+                ),
+                const SizedBox(height: 6),
+                _buildInfoCard(
+                  leadingColor: Color(0xFF10B981),
+                  icon: Icons.description,
+                  label: '個人介紹',
+                  value: description,
+                  trailingIcon: const Icon(Icons.arrow_forward_ios, size: 20),
+                  onTap: () {
+                    showDescriptionDialog(context, description);
+                  },
+                ),
+                const SizedBox(height: 6),
+                _buildInfoCard(
+                  leadingColor: Color(0xFFF59E0B),
+                  icon: Icons.login,
+                  label: '登入方式',
+                  value: provider,
+                ),
+                const SizedBox(height: 6),
+                _buildInfoCard(
+                  leadingColor: Color(0xFF8B5CF6),
+                  icon: Icons.route,
+                  label: '我的路線',
+                  value: '查看和管理自行車路線',
+                  trailingIcon: const Icon(Icons.arrow_forward_ios, size: 20),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const SavedRoutesPage(selectable: true),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    // 編輯資料按鈕
+                    Expanded(
+                      child: SizedBox(
+                        height: 46,
+                        child: TextButton.icon(
+                          onPressed: _isLoading ? null : _updateProfile,
+                          icon: Icon(
+                            Icons.edit,
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : const Color(0xFF1E293B),
+                            size: 18,
+                          ),
+                          label: const Text('編輯資料'),
+                          style: TextButton.styleFrom(
+                            // 根據深淺色，給予低調的灰黑或純白底色
+                            backgroundColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF334155)
+                                : const Color(0xFFF1F5F9),
+                            foregroundColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white
+                                : const Color(0xFF1E293B),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            textStyle: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // 登出按鈕
+                    Expanded(
+                      child: SizedBox(
+                        height: 46,
+                        child: TextButton.icon(
+                          onPressed: _isLoading ? null : _handleLogout,
+                          icon: const Icon(
+                            Icons.logout,
+                            color: Color(0xFFEF4444),
+                            size: 18,
+                          ),
+                          label: const Text('登出'),
+                          style: TextButton.styleFrom(
+                            backgroundColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? const Color(0xFF334155)
+                                : const Color(0xFFF1F5F9),
+                            foregroundColor: const Color(0xFFEF4444),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            textStyle: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
   Widget _buildInfoCard({
-    required IconData icon,
-    required String label,
-    required String value,
-    VoidCallback? onTap,
+    required Color leadingColor, // 左側區塊的背景顏色
+    required IconData icon, // 顯示的 Icon
+    required String label, // 主標題（如：Arts）
+    required String value, // 子標題（如：114 Videos）
+    Widget? trailingIcon, // 右側可選的 Icon（不傳就不顯示）
+    VoidCallback? onTap, // 點擊事件
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [Color.fromARGB(255, 227, 226, 226), Color(0xFFFFFFFF)],
-          stops: [0.6, 1.0],
-        ),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24), // 圖片中的大圓角風格
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
+            blurRadius: 16,
             offset: const Offset(0, 6),
           ),
         ],
-        border: Border.all(
-          color: const Color.fromARGB(255, 247, 216, 16),
-          width: 0.7,
-        ),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap, // 點擊事件
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2563EB).withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            child: IntrinsicHeight(
+              child: Row(
+                children: [
+                  // ======= 左側獨立顏色區塊 =======
+                  Container(
+                    width: 72, // 寬度可以根據設計調整
+                    color: leadingColor,
+                    alignment: Alignment.center,
+                    child: Icon(
+                      icon,
+                      size: 36, // 放大 Icon，凸顯主題
+                      color: Colors.white, // 圖片中均為純白 Icon
+                    ),
                   ),
-                  child: Icon(icon, size: 30, color: const Color(0xFF2563EB)),
-                ),
 
-                const SizedBox(width: 14),
+                  const SizedBox(width: 18),
 
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        label,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
-                        ),
+                  // ======= 中間文字內容 =======
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 22, // 圓潤大字體風格
+                              fontWeight: FontWeight.w800, // 強調字重
+                              color: Color(0xFF2D2D2D),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            value,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        value,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
 
-                if (onTap != null)
-                  const Icon(Icons.chevron_right, color: Colors.grey),
-              ],
+                  // ======= 右側可選 Icon 區塊 =======
+                  if (trailingIcon != null)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 20),
+                      child: trailingIcon,
+                    ),
+                ],
+              ),
             ),
           ),
         ),

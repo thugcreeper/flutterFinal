@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api/user_profile_api.dart';
 import '../widgets/error_snack_bar.dart';
 import '../widgets/success_snack_bar.dart';
+import '../widgets/gradient_scaffold.dart';
 
 class AccountManagementPage extends StatefulWidget {
   const AccountManagementPage({super.key});
@@ -119,15 +121,18 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
+        final String uid = user.uid;
+        await FirebaseFirestore.instance.collection('users').doc(uid).delete();
         await user.delete();
-      } else {
-        await UserProfileApiService().deleteAccount();
-        await _storage.delete(key: 'backendUserId');
       }
-
+      await _storage.delete(key: 'backendUserId');
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_savedRoutePointsKey);
-
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SuccessSnackBar(message: '帳號已成功刪除', duration: Duration(seconds: 2)),
+        );
+      }
       if (mounted) {
         Navigator.pop(context);
       }
@@ -161,94 +166,90 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
     final isEmailUser =
         user?.providerData.any((p) => p.providerId == 'password') ?? false;
 
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color.fromARGB(255, 161, 195, 221),
-            Color.fromARGB(255, 255, 255, 255),
-          ],
-        ),
-      ),
-      child: Scaffold(
+    return GradientScaffold(
+      appBar: AppBar(
+        title: const Text('帳號管理'),
+        elevation: 0,
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('帳號管理'),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-        ),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _glassCard(
-              child: ListTile(
-                leading: const Icon(Icons.account_circle_outlined),
-                title: const Text('登入帳號'),
-                subtitle: Text(user?.email ?? '社群帳號登入'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _glassCard(
+            child: ListTile(
+              leading: const Icon(
+                Icons.account_circle_outlined,
+                color: Color.fromARGB(255, 90, 90, 90),
               ),
+              title: const Text(
+                '登入帳號',
+                style: TextStyle(
+                  color: Color.fromARGB(255, 90, 90, 90),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                user?.email ?? '社群帳號登入',
+                style: const TextStyle(color: Color.fromARGB(255, 90, 90, 90)),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          if (isEmailUser) ...[
+            _sectionTitle('變更密碼'),
+
+            const SizedBox(height: 12),
+            _glassInput(
+              _PasswordField(
+                controller: _currentPasswordController,
+                label: '目前密碼',
+              ),
+            ),
+            const SizedBox(height: 12),
+            _glassInput(
+              _PasswordField(controller: _newPasswordController, label: '新密碼'),
+            ),
+            const SizedBox(height: 12),
+            _glassInput(
+              _PasswordField(
+                controller: _confirmPasswordController,
+                label: '確認新密碼',
+              ),
+            ),
+
+            const SizedBox(height: 16),
+            _glassButton(
+              text: _isLoading ? '更新中...' : '更新密碼',
+              onTap: _isLoading ? null : _handleChangePassword,
             ),
 
             const SizedBox(height: 24),
-
-            if (isEmailUser) ...[
-              _sectionTitle('變更密碼'),
-
-              const SizedBox(height: 12),
-              _glassInput(
-                _PasswordField(
-                  controller: _currentPasswordController,
-                  label: '目前密碼',
-                ),
-              ),
-              const SizedBox(height: 12),
-              _glassInput(
-                _PasswordField(
-                  controller: _newPasswordController,
-                  label: '新密碼',
-                ),
-              ),
-              const SizedBox(height: 12),
-              _glassInput(
-                _PasswordField(
-                  controller: _confirmPasswordController,
-                  label: '確認新密碼',
-                ),
-              ),
-
-              const SizedBox(height: 16),
-              _glassButton(
-                text: _isLoading ? '更新中...' : '更新密碼',
-                onTap: _isLoading ? null : _handleChangePassword,
-              ),
-
-              const SizedBox(height: 24),
-            ],
-
-            _sectionTitle('危險區域', color: Colors.red),
-
-            const SizedBox(height: 8),
-            _glassCard(
-              child: const ListTile(
-                leading: Icon(Icons.warning_amber, color: Colors.red),
-                title: Text('刪除帳號', style: TextStyle(color: Colors.red)),
-                subtitle: Text(
-                  '刪除後資料無法復原',
-                  style: TextStyle(color: Colors.redAccent),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            _glassButton(
-              text: '刪除帳號',
-
-              onTap: _isLoading ? null : _handleDeleteAccount,
-            ),
           ],
-        ),
+
+          _sectionTitle('危險區域', color: Colors.red),
+
+          const SizedBox(height: 8),
+          _glassCard(
+            child: const ListTile(
+              leading: Icon(Icons.warning_amber, color: Colors.red),
+              title: Text('刪除帳號', style: TextStyle(color: Colors.red)),
+              subtitle: Text(
+                '刪除後資料無法復原',
+                style: TextStyle(color: Colors.redAccent),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          _glassButton(
+            text: '刪除帳號',
+
+            onTap: _isLoading ? null : _handleDeleteAccount,
+          ),
+        ],
       ),
     );
   }
@@ -323,9 +324,11 @@ Widget _glassButton({required String text, required VoidCallback? onTap}) {
   return SizedBox(
     width: double.infinity,
     height: 48,
+
     child: ElevatedButton(
       onPressed: onTap,
       style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         elevation: 0,
       ),

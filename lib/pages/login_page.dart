@@ -39,30 +39,52 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _syncFirebaseUserProfile(User user) async {
     final docRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-    // 先讀取現有資料
+
+    //先讀取 Firestore 現有資料（避免蓋掉使用者後來改過的名字或頭像）
     final existing = await docRef.get();
-    final existingImageUrl = existing.data()?['imageUrl'] ?? '';
-    final existingName = existing.data()?['name'] ?? '';
+    final bool hasExisting = existing.exists;
+    final existingImageUrl = hasExisting
+        ? (existing.data()?['imageUrl'] ?? '')
+        : '';
+    final existingName = hasExisting ? (existing.data()?['name'] ?? '') : '';
+
+    // 確保 Email 與 Account 絕對有值
+    String emailTarget = user.email ?? '';
+    if (emailTarget.isEmpty && user.providerData.isNotEmpty) {
+      emailTarget = user.providerData.first.email ?? '';
+    }
+
+    final String providerId = user.providerData.isNotEmpty
+        ? user.providerData.first.providerId
+        : 'unknown';
+
+    String imageUrl = user.photoURL ?? '';
+
+    String accountTarget = emailTarget;
+    if (accountTarget.isEmpty) {
+      accountTarget = '$providerId:${user.uid}';
+    }
+
+    // 準備基礎 Payload
     final payload = {
       'uid': user.uid,
-      'account': user.email ?? '',
+      'account': accountTarget,
+      'email': emailTarget,
       'name': existingName.isNotEmpty
           ? existingName
           : (user.displayName ?? '未知使用者'),
-      'email': user.email ?? '',
-      // 只有當 Firestore 沒有自訂頭像時才用 Google 的
-      'imageUrl': existingImageUrl.isNotEmpty
-          ? existingImageUrl
-          : (user.photoURL ?? ''),
-      'provider': user.providerData.isNotEmpty
-          ? user.providerData.first.providerId
-          : 'unknown',
+      'imageUrl': existingImageUrl.isNotEmpty ? existingImageUrl : imageUrl,
+      'provider': providerId,
       'updatedAt': FieldValue.serverTimestamp(),
     };
-    await docRef.set({
-      ...payload,
-      'createdAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+
+    // 只有當資料庫沒有舊資料時，才寫入絕對的創帳時間
+    if (!hasExisting) {
+      payload['createdAt'] = FieldValue.serverTimestamp();
+    }
+
+    // 寫入或更新到 Firestore
+    await docRef.set(payload, SetOptions(merge: true));
   }
 
   Future<void> _syncBackendUserProfile(Map<String, dynamic> user) async {
@@ -213,15 +235,13 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      // 1. 透過 flutter_facebook_auth 觸發原生 Facebook 登入並請求權限
+      // 1. 透過 flutter_facebook_auth 觸發原生 Facebook 登入
       final LoginResult loginResult = await FacebookAuth.instance.login(
         permissions: ['public_profile', 'email'],
       );
 
-      // 檢查登入狀態
       if (loginResult.status != LoginStatus.success) {
         setState(() => _isLoading = false);
-        // 如果使用者只是點選取消，就直接返回，不做錯誤提示
         if (loginResult.status == LoginStatus.cancelled) return;
 
         if (mounted) {
@@ -241,7 +261,7 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // 2. 使用 Facebook 的 AccessToken 建立 Firebase 的 OAuth 憑證並登入 Firebase
+      // 2. 使用 Facebook 的 AccessToken 登入 Firebase
       final OAuthCredential credential = FacebookAuthProvider.credential(
         fbToken.tokenString,
       );
@@ -251,52 +271,27 @@ class _LoginPageState extends State<LoginPage> {
       final user = userCredential.user;
 
       if (user != null) {
-        // 3. 【關鍵步驟】取得 Firebase 的 idToken 送給 FastAPI 後端驗證
-        final String? firebaseIdToken = await user.getIdToken();
-        if (firebaseIdToken == null) {
-          throw Exception("無法取得 Firebase idToken");
-        }
-
-        // 4. 呼叫自建後端 API 換取後端的 accessToken
-        final apiService = ApiService();
-        final backendResult = await apiService.facebookLogin(firebaseIdToken);
-
-        if (backendResult['ok'] != true) {
-          // 如果後端驗證失敗，要把 Firebase 登出，維持前後端狀態一致
-          await FirebaseAuth.instance.signOut();
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              ErrorSnackBar(
-                message: backendResult['message'] ?? '後端 Facebook 驗證失敗',
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          }
-          return;
-        }
-
-        // 5. 同步 Firestore 使用者資料，並清除自建帳密登入專用的 backendUserId
         await _syncFirebaseUserProfile(user);
         await _storage.delete(key: 'backendUserId');
+      }
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SuccessSnackBar(
-              message: 'Facebook 登入成功！',
-              duration: Duration(seconds: 2),
-            ),
-          );
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginSuccessPage()),
-          );
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SuccessSnackBar(
+            message: 'Facebook 登入成功！(Firebase)',
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginSuccessPage()),
+        );
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         final message = switch (e.code) {
           'account-exists-with-different-credential' =>
-            '此 Email 已被其他登入方式（如 Google）註冊，請使用原方式登入。',
+            '此 Email 已被其他登入方式註冊，請使用原方式登入。',
           'invalid-credential' => 'Facebook 登入憑證無效或已過期。',
           'user-disabled' => '此帳號已被停用。',
           'operation-not-allowed' => 'Facebook 登入尚未在 Firebase 啟用。',

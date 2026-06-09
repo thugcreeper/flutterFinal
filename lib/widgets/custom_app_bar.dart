@@ -338,7 +338,7 @@ class _CustomAppBarState extends State<CustomAppBar>
       child: AppBar(
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        backgroundColor: Colors.white.withValues(alpha: 0.92),
+        backgroundColor: Colors.transparent,
 
         title: _isSearching
             ? FadeTransition(

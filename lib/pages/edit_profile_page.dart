@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import '../widgets/error_snack_bar.dart';
 import '../widgets/success_snack_bar.dart';
+import '../widgets/gradient_scaffold.dart';
 
 /// 編輯個人資料頁面，允許更新名稱、Email、個人介紹與頭像。
 ///
@@ -230,102 +231,82 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ? NetworkImage(_initialImageUrl!)
         : null;
 
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color.fromARGB(255, 161, 195, 221),
-            Color.fromARGB(255, 255, 255, 255),
-          ],
-        ),
-      ),
-      child: Scaffold(
+    return GradientScaffold(
+      appBar: AppBar(
+        title: const Text('編輯個人資料'),
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('編輯個人資料'),
-          backgroundColor: Colors.transparent,
-        ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    GestureDetector(
-                      onTap: _pickImage,
-                      child: CircleAvatar(
-                        radius: 56,
-                        backgroundImage: avatarProvider,
-                        child: avatarProvider == null
-                            ? const Icon(Icons.camera_alt, size: 40)
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: '名稱',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _emailController,
-                      enabled: _emailEditable,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    const SizedBox(height: 6),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        _emailEditable
-                            ? 'Email 只會更新到 Firestore，不會直接變更 Firebase Auth。'
-                            : '此帳號為社群登入，無法在此修改 Email。',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _descriptionController,
-                      decoration: const InputDecoration(
-                        labelText: '個人介紹',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.multiline,
-                      maxLines: 4,
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isSaving ? null : _save,
-                        child: _isSaving
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text('儲存'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: CircleAvatar(
+                      radius: 56,
+                      backgroundImage: avatarProvider,
+                      child: avatarProvider == null
+                          ? const Icon(Icons.camera_alt, size: 40)
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: '名稱',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _emailController,
+                    enabled: _emailEditable,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 6),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      _emailEditable
+                          ? 'Email 只會更新到 Firestore，不會直接變更 Firebase Auth。'
+                          : '此帳號為社群登入，無法在此修改 Email。',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _descriptionController,
+                    decoration: const InputDecoration(
+                      labelText: '個人介紹',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.multiline,
+                    maxLines: 4,
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isSaving ? null : _save,
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('儲存'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 }

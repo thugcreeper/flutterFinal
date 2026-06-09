@@ -13,7 +13,7 @@ import '../api/convenience_store_api.dart';
 import '../models/directions_route.dart';
 import '../models/map_point.dart';
 import '../models/saved_route.dart';
-import '../widgets/app_bar.dart';
+import '../widgets/custom_app_bar.dart';
 import '../widgets/nearby_search_results_panel.dart';
 import '../widgets/error_snack_bar.dart';
 import '../widgets/success_snack_bar.dart';
@@ -23,6 +23,7 @@ import 'saved_routes_page.dart';
 import '../providers/route_provider.dart';
 import 'package:provider/provider.dart';
 import '../controller/nearby_search_controller.dart';
+import '../widgets/gradient_scaffold.dart';
 
 // 主頁面，包含地圖顯示與路線規劃功能，登入後要來到這裡
 class HomePage extends StatefulWidget {
@@ -695,7 +696,7 @@ class _HomePageState extends State<HomePage> {
       ..._buildNearbySearchMarkers(),
     };
 
-    return Scaffold(
+    return GradientScaffold(
       appBar: CustomAppBar(
         initialSearchCenter: _currentMapCenter,
         onSearchSubmitted: (keyword, category) async {
@@ -801,7 +802,6 @@ class _HomePageState extends State<HomePage> {
                 onClose: _closeNearbySearchPanel,
                 onTapPoint: _focusNearbyResult,
                 onAddToRoute: _handleNearbyResultRouteAction,
-                sheetController: _nearbySearchSheetController,
               ),
             ),
           if (_routePoints.isNotEmpty && !_searchController.showPanel)

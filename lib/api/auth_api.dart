@@ -186,9 +186,10 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
+
         await _storage.write(
-          key: 'idToken',
-          value: data['idToken']?.toString() ?? '',
+          key: 'accessToken',
+          value: data['accessToken']?.toString() ?? '',
         );
         return <String, dynamic>{'ok': true, ...data};
       }

@@ -39,6 +39,7 @@ class MyApp extends StatelessWidget {
       //Consumer 是我要監聽這個 Provider，它一變我就重建
       child: Consumer<ThemeProvider>(
         builder: (_, themeProvider, _) => MaterialApp(
+          debugShowCheckedModeBanner: false,
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
             fontFamily: 'english',
