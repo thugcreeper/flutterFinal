@@ -775,35 +775,33 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           if (_searchController.showPanel)
-            Positioned.fill(
-              key: const ValueKey('nearby-search-panel'),
-              child: NearbySearchResultsPanel(
-                key: _nearbyPanelKey,
-                isLoading: _searchController.isLoading,
-                cityLabel: _searchController.cityLabel,
-                areaLabel: _searchController.areaLabel,
-                category: _searchController.currentCategory,
-                keyword: _searchController.currentKeyword,
-                errorMessage: _searchController.errorMessage,
-                results: _searchController.results,
-                onRefresh: () async {
-                  final bounds = await _mapController?.getVisibleRegion();
-                  await _searchController.handleNearbySearch(
-                    _searchController.currentKeyword ?? '',
-                    _searchController.currentCategory,
-                    bounds: bounds,
-                    searchScenicSpots:
-                        _tourismSearchService.searchScenicSpotsNearby,
-                    searchRestaurants:
-                        _tourismSearchService.searchRestaurantsNearby,
-                    searchStores: _convenienceStoreApi.getNearbyAllStores,
-                  );
-                },
-                onClose: _closeNearbySearchPanel,
-                onTapPoint: _focusNearbyResult,
-                onAddToRoute: _handleNearbyResultRouteAction,
-              ),
+            NearbySearchResultsPanel(
+              key: _nearbyPanelKey,
+              isLoading: _searchController.isLoading,
+              cityLabel: _searchController.cityLabel,
+              areaLabel: _searchController.areaLabel,
+              category: _searchController.currentCategory,
+              keyword: _searchController.currentKeyword,
+              errorMessage: _searchController.errorMessage,
+              results: _searchController.results,
+              onRefresh: () async {
+                final bounds = await _mapController?.getVisibleRegion();
+                await _searchController.handleNearbySearch(
+                  _searchController.currentKeyword ?? '',
+                  _searchController.currentCategory,
+                  bounds: bounds,
+                  searchScenicSpots:
+                      _tourismSearchService.searchScenicSpotsNearby,
+                  searchRestaurants:
+                      _tourismSearchService.searchRestaurantsNearby,
+                  searchStores: _convenienceStoreApi.getNearbyAllStores,
+                );
+              },
+              onClose: _closeNearbySearchPanel,
+              onTapPoint: _focusNearbyResult,
+              onAddToRoute: _handleNearbyResultRouteAction,
             ),
+
           if (_routePoints.isNotEmpty && !_searchController.showPanel)
             Positioned(
               key: const ValueKey('route-action-buttons'),

@@ -251,9 +251,9 @@ class _RouteListTile extends StatelessWidget {
 
               Row(
                 children: [
-                  _buildBadge(route.distance),
+                  Expanded(child: _buildBadge(route.distance)),
                   const SizedBox(width: 8),
-                  _buildBadge(route.duration),
+                  Expanded(child: _buildBadge(route.duration)),
                 ],
               ),
 
@@ -261,31 +261,33 @@ class _RouteListTile extends StatelessWidget {
 
               Row(
                 children: [
-                  Text(
-                    '↑ ${route.totalAscent.toStringAsFixed(0)}m',
-                    style: const TextStyle(
-                      color: Colors.green,
-                      fontWeight: FontWeight.w600,
+                  Expanded(
+                    child: Text(
+                      '↑ ${route.totalAscent.toStringAsFixed(0)}m',
+                      style: const TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
 
                   const SizedBox(width: 12),
 
-                  Text(
-                    '↓ ${route.totalDescent.toStringAsFixed(0)}m',
-                    style: const TextStyle(
-                      color: Colors.orange,
-                      fontWeight: FontWeight.w600,
+                  Expanded(
+                    child: Text(
+                      '↓ ${route.totalDescent.toStringAsFixed(0)}m',
+                      style: const TextStyle(
+                        color: Colors.orange,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-
-                  const Spacer(),
-
-                  Text(
-                    date,
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                  ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "建立日期: ${date}",
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
               ),
             ],
           ),
