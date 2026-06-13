@@ -57,6 +57,16 @@ class GuidePage extends StatelessWidget {
                 '• 推播通知設定\n'
                 '• 應用程式資訊',
           ),
+          GuideCard(
+            leadingColor: const Color(0xFF3B82F6),
+            title: 'AI 聊天助理',
+            icon: Icons.auto_awesome,
+            content:
+                '• 自動讀取目前位置行政區(如基隆市中正區)的景點、餐廳與超商數量\n'
+                '• 點擊「幫我推薦路線」按鈕，快速生成專屬單車行程\n'
+                '• 點擊 AI 助理的大頭貼，可查看詳細個人簡介與大圖檢視\n'
+                '• 右上角提供「清除對話」按鈕',
+          ),
         ],
       ),
     );

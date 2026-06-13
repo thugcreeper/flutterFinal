@@ -31,7 +31,6 @@ class SocialLoginSection extends StatelessWidget {
 
   // ── Facebook ─────────────────────────────────────────────
   Future<void> _loginWithFacebook(BuildContext context) async {
-    // TODO: 待 Meta 開發者後台設定完成後實作
     if (onFacebookPressed != null) {
       onFacebookPressed!();
       return;

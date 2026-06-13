@@ -169,6 +169,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       // 先叫出 Google 帳號選擇器，再把結果換成 Firebase 可用的憑證。
       final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
+      await googleSignIn.signOut(); // 確保每次都會彈出帳號選擇器
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
         return;

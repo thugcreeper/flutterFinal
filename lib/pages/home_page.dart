@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../api/saved_route_api.dart';
 import '../api/tourism_search_api.dart';
 import '../api/convenience_store_api.dart';
+import '../api/city_lookup_api.dart';
 import '../models/directions_route.dart';
 import '../models/map_point.dart';
 import '../models/saved_route.dart';
@@ -20,10 +21,15 @@ import '../widgets/success_snack_bar.dart';
 import '../widgets/route_info_card.dart';
 import '../widgets/action_buttons.dart';
 import 'saved_routes_page.dart';
+import 'ai_chat_page.dart';
 import '../providers/route_provider.dart';
 import 'package:provider/provider.dart';
 import '../controller/nearby_search_controller.dart';
 import '../widgets/gradient_scaffold.dart';
+import '../controller/ai_chat_controller.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+//test
+import '../pages/md_test.dart';
 
 // 主頁面，包含地圖顯示與路線規劃功能，登入後要來到這裡
 class HomePage extends StatefulWidget {
@@ -45,7 +51,9 @@ class _HomePageState extends State<HomePage> {
   final ConvenienceStoreApi _convenienceStoreApi = ConvenienceStoreApi();
   late final NearbySearchController _searchController =
       NearbySearchController();
+  final CityLookupService _cityLookupService = CityLookupService();
   final _nearbyPanelKey = GlobalKey<NearbySearchResultsPanelState>();
+  late final AiChatController _aiChatController = AiChatController();
   final List<LatLng> _routePoints = []; // 用來存放使用者點選的路線點位
   final Set<Marker> _markers = {}; // 用來存放地圖上的標記，與 _routePoints 對應
   Set<Polyline> _polylines = {}; // 用來存放從 Directions API 取得的路線 polyline，理論上只會有一條
@@ -73,7 +81,25 @@ class _HomePageState extends State<HomePage> {
     if (!mounted) return;
     setState(() {});
 
-    // 有新結果時移動地圖
+    // 更新 AI controller 的城市和附近資料
+    _aiChatController.currentCity = _searchController.cityLabel;
+    _aiChatController.currentArea = _searchController.areaLabel;
+
+    final results = _searchController.results;
+    _aiChatController.nearbyScenics = results
+        .where((p) => p.typeLabel == '景點')
+        .map((p) => p.name)
+        .toList();
+    _aiChatController.nearbyRestaurants = results
+        .where((p) => p.typeLabel == '餐廳')
+        .map((p) => p.name)
+        .toList();
+    _aiChatController.nearbyStores = results
+        .where((p) => p.typeLabel == '7-11' || p.typeLabel == '全家')
+        .map((p) => p.name)
+        .toList();
+
+    // 地圖移動
     final center = _searchController.lastResultCenter;
     if (center != null) {
       _mapController?.animateCamera(CameraUpdate.newLatLngZoom(center, 16));
@@ -630,8 +656,15 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
+    // Firebase 登入用 uid，後端登入用 backendUserId
+    String? userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (userId == null || userId.isEmpty) {
+      final storage = const FlutterSecureStorage();
+      userId = await storage.read(key: 'backendUserId');
+    }
+
+    if (userId == null || userId.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(ErrorSnackBar(message: '尚未登入，無法儲存路線'));
@@ -643,7 +676,7 @@ class _HomePageState extends State<HomePage> {
 
     try {
       await SavedRouteApiService().saveRoute(
-        userId: user.uid,
+        userId: userId,
         routeName: routeName,
         distance: _routeDistanceText ?? '',
         duration: _routeDurationText ?? '',
@@ -752,8 +785,93 @@ class _HomePageState extends State<HomePage> {
             myLocationButtonEnabled: false,
             zoomControlsEnabled: true,
             padding: EdgeInsets.only(
-              bottom: _searchController.showPanel ? 320 : 24,
+              bottom: _searchController.showPanel ? 320 : 80,
               right: 16,
+            ),
+          ),
+          //AI服務按鈕放在右下角
+          Positioned(
+            right: 16,
+            bottom: _searchController.showPanel ? 340 : 30,
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF2563EB), Color(0xFF60A5FA)],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: FloatingActionButton(
+                heroTag: 'ai_button',
+                elevation: 0,
+                backgroundColor: Colors.transparent,
+                onPressed: () async {
+                  final resolved = await _cityLookupService
+                      .resolveCityFromCoordinates(
+                        latitude: _currentMapCenter.latitude,
+                        longitude: _currentMapCenter.longitude,
+                      );
+                  if (resolved != null) {
+                    _aiChatController.currentCity = resolved.displayName;
+                    _aiChatController.currentArea = resolved.area;
+
+                    // 順便抓景點和餐廳給 AI 參考
+                    final scenics = await _tourismSearchService
+                        .searchScenicSpotsNearby(
+                          city: resolved.tdxCityKey,
+                          latitude: _currentMapCenter.latitude,
+                          longitude: _currentMapCenter.longitude,
+                          top: 20,
+                        );
+                    final restaurants = await _tourismSearchService
+                        .searchRestaurantsNearby(
+                          city: resolved.tdxCityKey,
+                          latitude: _currentMapCenter.latitude,
+                          longitude: _currentMapCenter.longitude,
+                          top: 10,
+                        );
+                    final stores = await _convenienceStoreApi
+                        .getNearbyAllStores(
+                          city: resolved.displayName,
+                          area: resolved.area ?? '',
+                        );
+
+                    _aiChatController.nearbyScenics = scenics
+                        .map((s) => s.name)
+                        .toList();
+                    _aiChatController.nearbyRestaurants = restaurants
+                        .map((r) => r.name)
+                        .toList();
+                    _aiChatController.nearbyStores = stores
+                        .map((s) => s.name)
+                        .toList();
+                  }
+
+                  if (mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            AiChatPage(controller: _aiChatController),
+                        //MdTestPage(),
+                      ),
+                    );
+                  }
+                },
+                child: const Icon(
+                  Icons.auto_awesome,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
             ),
           ),
           if (_showRouteInfo && _routePoints.length >= 2)
