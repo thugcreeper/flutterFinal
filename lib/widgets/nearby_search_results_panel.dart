@@ -16,6 +16,7 @@ class NearbySearchResultsPanel extends StatefulWidget {
   final VoidCallback onClose;
   final ValueChanged<MapPoint> onTapPoint;
   final Future<void> Function(MapPoint point) onAddToRoute;
+  final ValueChanged<double>? onHeightChanged;
 
   const NearbySearchResultsPanel({
     super.key,
@@ -30,6 +31,7 @@ class NearbySearchResultsPanel extends StatefulWidget {
     required this.onClose,
     required this.onTapPoint,
     required this.onAddToRoute,
+    required this.onHeightChanged,
   });
 
   @override
@@ -108,7 +110,10 @@ class NearbySearchResultsPanelState extends State<NearbySearchResultsPanel>
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final panelHeight = screenHeight * _heightFraction;
-
+    // 通知父 widget 面板高度變化（用於調整地圖 padding）
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onHeightChanged?.call(panelHeight);
+    });
     return Positioned(
       left: 0,
       right: 0,

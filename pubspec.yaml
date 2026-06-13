@@ -48,8 +48,6 @@ dependencies:
   url_launcher: ^6.3.2
   scrollable_positioned_list: ^0.3.8 # 用於搜尋結果列表
   flutter_markdown_plus: ^1.0.7
-  flutter_localization: ^0.4.0
-  intl: ^0.20.2
 
 
 dev_dependencies:

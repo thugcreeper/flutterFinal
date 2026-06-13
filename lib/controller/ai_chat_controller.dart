@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../api/gemini_api.dart';
+import '../api/ai_assistant_api.dart';
 import '../models/chat_message.dart';
 import 'dart:io';
 import 'dart:async';
@@ -9,7 +9,7 @@ import 'dart:async';
 class AiChatController extends ChangeNotifier {
   static const String _storageKey = 'ai_chat_history';
 
-  final GeminiApi _geminiApi = GeminiApi();
+  final AiAssistantApi _aiAssistantApi = AiAssistantApi();
 
   List<ChatMessage> messages = [];
   bool isLoading = false;
@@ -71,7 +71,7 @@ class AiChatController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final reply = await _geminiApi.sendMessage(
+      final reply = await _aiAssistantApi.sendMessage(
         messages: messages,
         systemPrompt: _systemPrompt,
       );
@@ -87,7 +87,7 @@ class AiChatController extends ChangeNotifier {
         messages = [...messages, modelMessage];
         await _saveHistory();
       }
-    } on GeminiException catch (e) {
+    } on AiAssistantException catch (e) {
       errorMessage = e.message; // 已知的 AI 錯誤
     } on TimeoutException {
       errorMessage = '請求逾時，請檢查網路連線';

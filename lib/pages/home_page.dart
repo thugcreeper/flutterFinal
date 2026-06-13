@@ -28,8 +28,6 @@ import '../controller/nearby_search_controller.dart';
 import '../widgets/gradient_scaffold.dart';
 import '../controller/ai_chat_controller.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-//test
-import '../pages/md_test.dart';
 
 // 主頁面，包含地圖顯示與路線規劃功能，登入後要來到這裡
 class HomePage extends StatefulWidget {
@@ -67,13 +65,20 @@ class _HomePageState extends State<HomePage> {
   double? _totalAscent;
   double? _totalDescent;
   String? _elevationErrorText;
+  double _panelHeight = 320;
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchStateChanged);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<RouteProvider>().addListener(_onRouteSelected);
+      if (!mounted) return;
+
+      // 確保不論之前登出時有沒有清乾淨，都能把舊的殘留監聽強行拔除，絕對不會重複綁定。
+      final routeProvider = context.read<RouteProvider>();
+      routeProvider.removeListener(_onRouteSelected);
+      routeProvider.addListener(_onRouteSelected);
     });
   }
 
@@ -107,6 +112,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _onRouteSelected() {
+    if (!mounted) return;
     final route = context.read<RouteProvider>().selectedRoute;
     if (route == null) return;
 
@@ -120,8 +126,17 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    // 釋放原有的控制器
     _nearbySearchSheetController.dispose();
     _searchController.dispose();
+
+    // 登出或銷毀時，用當前的 Provider 再做一次強行除根
+    try {
+      context.read<RouteProvider>().removeListener(_onRouteSelected);
+    } catch (_) {
+      // 防止極端狀況下 context 提早失效
+    }
+
     super.dispose();
   }
 
@@ -459,33 +474,40 @@ class _HomePageState extends State<HomePage> {
             maxSamples: 120,
             thresholdMeters: 2.0,
           );
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _startElevation = summary.startElevation;
-        _endElevation = summary.endElevation;
-        _totalAscent = summary.totalAscent;
-        _totalDescent = summary.totalDescent;
-        _elevationErrorText = null;
-        _showRouteInfo = true;
+
+      if (!mounted) return;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _startElevation = summary.startElevation;
+          _endElevation = summary.endElevation;
+          _totalAscent = summary.totalAscent;
+          _totalDescent = summary.totalDescent;
+          _elevationErrorText = null;
+          _showRouteInfo = true;
+        });
       });
     } catch (e) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _startElevation = null;
-        _endElevation = null;
-        _totalAscent = null;
-        _totalDescent = null;
-        _elevationErrorText = '海拔查詢失敗：$e';
+      if (!mounted) return;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _startElevation = null;
+          _endElevation = null;
+          _totalAscent = null;
+          _totalDescent = null;
+          _elevationErrorText = '海拔查詢失敗：$e';
+        });
+
+        // 改用全域的 context.mounted 語法保護它
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(ErrorSnackBar(message: '海拔查詢失敗：$e'));
+        }
       });
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(ErrorSnackBar(message: '海拔查詢失敗：$e'));
-      }
     }
   }
 
@@ -621,10 +643,15 @@ class _HomePageState extends State<HomePage> {
     try {
       await _saveRoutePoints();
       await _refreshRouteData();
-      if (mounted && _mapController != null && _routePoints.isNotEmpty) {
-        await _mapController!.animateCamera(
-          CameraUpdate.newLatLng(_routePoints.first),
-        );
+
+      // 延遲到下一幀再移動相機，確保 GoogleMap 已重新渲染
+      if (mounted && _routePoints.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (!mounted) return;
+          await _mapController?.animateCamera(
+            CameraUpdate.newLatLng(_routePoints.first),
+          );
+        });
       }
     } finally {
       if (mounted) setState(() => _isProcessingRoute = false);
@@ -792,7 +819,7 @@ class _HomePageState extends State<HomePage> {
           //AI服務按鈕放在右下角
           Positioned(
             right: 16,
-            bottom: _searchController.showPanel ? 340 : 30,
+            bottom: _searchController.showPanel ? _panelHeight + 20 : 30,
             child: Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -902,6 +929,11 @@ class _HomePageState extends State<HomePage> {
               keyword: _searchController.currentKeyword,
               errorMessage: _searchController.errorMessage,
               results: _searchController.results,
+              onHeightChanged: (height) {
+                setState(() {
+                  _panelHeight = height;
+                });
+              },
               onRefresh: () async {
                 final bounds = await _mapController?.getVisibleRegion();
                 await _searchController.handleNearbySearch(

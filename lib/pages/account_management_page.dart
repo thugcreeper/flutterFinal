@@ -7,6 +7,7 @@ import '../api/user_profile_api.dart';
 import '../widgets/error_snack_bar.dart';
 import '../widgets/success_snack_bar.dart';
 import '../widgets/gradient_scaffold.dart';
+import 'login_page.dart';
 
 class AccountManagementPage extends StatefulWidget {
   const AccountManagementPage({super.key});
@@ -120,21 +121,48 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
 
     try {
       final user = FirebaseAuth.instance.currentUser;
+
       if (user != null) {
+        // ── Firebase 登入（Google / Facebook）────────────────
         final String uid = user.uid;
+        // 先刪 Firestore 資料
         await FirebaseFirestore.instance.collection('users').doc(uid).delete();
+        // 再刪 Firebase Auth 帳號
         await user.delete();
+        await FirebaseAuth.instance.signOut();
+      } else {
+        // ── 本地登入 ──────────────────────────────────────────
+        final backendUserId = await _storage.read(key: 'backendUserId');
+        if (backendUserId != null && backendUserId.isNotEmpty) {
+          // 刪 Firestore 的使用者資料
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(backendUserId)
+              .delete();
+        }
+        // 呼叫後端 API 刪帳號
+        await UserProfileApiService().deleteAccount();
       }
+
+      // 清除本地所有資料
       await _storage.delete(key: 'backendUserId');
+      await _storage.delete(key: 'accessToken');
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_savedRoutePointsKey);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SuccessSnackBar(message: '帳號已成功刪除', duration: Duration(seconds: 2)),
+          SuccessSnackBar(
+            message: '帳號已成功刪除',
+            duration: const Duration(seconds: 2),
+          ),
         );
-      }
-      if (mounted) {
-        Navigator.pop(context);
+        // 導回登入頁，清除所有 route
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+          (route) => false,
+        );
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -142,7 +170,7 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
             ? '請重新登入後再試'
             : '刪除失敗：${e.message}';
         ScaffoldMessenger.of(context).showSnackBar(
-          ErrorSnackBar(message: message, duration: const Duration(seconds: 2)),
+          ErrorSnackBar(message: message, duration: const Duration(seconds: 3)),
         );
       }
     } catch (e) {
@@ -150,7 +178,7 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           ErrorSnackBar(
             message: '刪除失敗：$e',
-            duration: const Duration(seconds: 2),
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -159,7 +187,6 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
     }
   }
 
-  @override
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
