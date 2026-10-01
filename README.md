@@ -1,6 +1,7 @@
 # RideVoyage
 
 RideVoyage 是一款專為單車愛好者打造的智能單車路線規劃與導航應用程式。本專案結合了地圖導航、高度分析、周邊景點搜尋以及 AI 智慧行程推薦，旨在為單車騎士提供一站式的騎行旅程規劃解決方案。透過串接多項第三方專業 API 與 Firebase 雲端服務，系統能針對單車騎行的特殊需求，提供精準的坡度數據與客製化路線建議。
+詳細介紹與實際畫面請見：[RideVoyage 專題介紹](https://medium.com/%E6%B5%B7%E5%A4%A7-ios-app-%E7%A8%8B%E5%BC%8F%E8%A8%AD%E8%A8%88/flutter-final%E5%B0%88%E9%A1%8C-ridevoyage%E8%87%AA%E8%A1%8C%E8%BB%8A%E8%B7%AF%E7%B7%9A%E8%A6%8F%E5%8A%83%E5%8A%A9%E6%89%8B-c7e4507d205b)
 
 ---
 
